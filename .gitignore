@@ -19,3 +19,6 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# Claude Code — 本地私有配置（settings.json 和 skills/ 入库）
+.claude/settings.local.json
