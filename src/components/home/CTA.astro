@@ -1,0 +1,61 @@
+---
+// 落地 CTA 区块
+---
+
+<section class="cta-section">
+  <h2 class="cta-title">立即体验巨象</h2>
+  <p class="cta-sub">专为本地生活商家打造，AI Agent 帮你完成一切营销工作。</p>
+  <div class="cta-btns">
+    <button class="cta-btn-primary" type="button">免费体验</button>
+  </div>
+</section>
+
+<style>
+  .cta-section {
+    background: #fff;
+    padding: 120px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .cta-title {
+    font-size: 52px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.2;
+  }
+  .cta-sub {
+    font-size: 17px;
+    color: #888;
+    font-weight: 300;
+  }
+  .cta-btns {
+    margin-top: 16px;
+  }
+  .cta-btn-primary {
+    padding: 14px 48px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    background: #ff6b35;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .cta-btn-primary:hover {
+    background: #ff5500;
+    transform: translateY(-1px);
+  }
+  @media (max-width: 768px) {
+    .cta-section {
+      padding: 72px 20px;
+    }
+    .cta-title {
+      font-size: 36px;
+    }
+  }
+</style>

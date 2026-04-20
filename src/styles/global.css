@@ -1,0 +1,53 @@
+/* Quicktion 全局样式：Tailwind v4 + Starlight 主题定制 */
+/* 层级顺序：base 在最底（浏览器默认），starlight 覆盖它，theme/components/utilities 按 Tailwind 规范 */
+@layer base, starlight, theme, components, utilities;
+
+@import "@astrojs/starlight-tailwind";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme {
+  /* 字体：Inter 做拉丁，Noto Sans SC 做中文 */
+  --font-sans:
+    "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+
+  /* Quicktion 品牌橙色 —— accent 调色板（Starlight 主色） */
+  --color-accent-50: #fff3ec;
+  --color-accent-100: #ffe1cc;
+  --color-accent-200: #ffc9a3;
+  --color-accent-300: #ffa870;
+  --color-accent-400: #ff8b4d;
+  --color-accent-500: #ff6b35;
+  --color-accent-600: #ff5500;
+  --color-accent-700: #d04400;
+  --color-accent-800: #993300;
+  --color-accent-900: #6b2400;
+  --color-accent-950: #3d1400;
+
+  /* 暖灰（接近 stone，比默认 zinc 更暖，和品牌橙更协调） */
+  --color-gray-50: var(--color-stone-50);
+  --color-gray-100: var(--color-stone-100);
+  --color-gray-200: var(--color-stone-200);
+  --color-gray-300: var(--color-stone-300);
+  --color-gray-400: var(--color-stone-400);
+  --color-gray-500: var(--color-stone-500);
+  --color-gray-600: var(--color-stone-600);
+  --color-gray-700: var(--color-stone-700);
+  --color-gray-800: var(--color-stone-800);
+  --color-gray-900: var(--color-stone-900);
+  --color-gray-950: var(--color-stone-950);
+}
+
+/* Starlight 变量微调：让侧边栏更紧凑，内容区更宽 */
+:root {
+  --sl-sidebar-width: 18rem;
+  --sl-content-width: 50rem;
+}
+
+/* 全局光滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
