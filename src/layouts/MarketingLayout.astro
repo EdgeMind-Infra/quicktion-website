@@ -2,24 +2,31 @@
 /**
  * Marketing 页面专用布局：独立于 Starlight 的站点壳。
  * 用于首页、定价页等品牌营销页面，完全掌控 HTML / head / nav / footer。
+ *
+ * lang prop 决定：
+ * - html[lang] 属性（SEO / 辅助技术）
+ * - 传给 SiteNav 的语言
+ * - Footer 文案
+ * - 默认 meta title/description（可被外部 props 覆盖）
  */
 import "../styles/global.css";
+import SiteNav from "../components/nav/SiteNav.astro";
+import { type Lang, homeStrings } from "../i18n/home";
 import { withBase } from "../lib/paths";
 
 interface Props {
-  title: string;
+  title?: string;
   description?: string;
-  lang?: string;
+  lang?: "zh-CN" | "en";
 }
 
-const {
-  title,
-  description = "巨象 Quicktion —— 为本地生活商家打造的 AI Agent 营销平台",
-  lang = "zh-CN",
-} = Astro.props;
+const { title, description, lang = "zh-CN" } = Astro.props;
+const navLang: Lang = lang === "en" ? "en" : "zh";
+const s = homeStrings[navLang];
 
-const homeHref = withBase("/");
-const helpHref = withBase("/help/quick-start/what-is/");
+const pageTitle = title ?? s.meta.title;
+const pageDesc = description ?? s.meta.description;
+const brandName = navLang === "zh" ? "巨象" : "Quicktion";
 const faviconHref = withBase("/favicon.svg");
 ---
 
@@ -28,8 +35,8 @@ const faviconHref = withBase("/favicon.svg");
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDesc} />
     <link rel="icon" type="image/svg+xml" href={faviconHref} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,23 +46,7 @@ const faviconHref = withBase("/favicon.svg");
     />
   </head>
   <body>
-    <nav class="marketing-nav">
-      <a href={homeHref} class="nav-brand">
-        <span class="nav-logo-mark">巨</span>
-        <span class="nav-logo-text">巨象 <span class="accent">Quicktion</span></span>
-      </a>
-      <div class="nav-links">
-        <a href="#features">功能特色</a>
-        <a href="#product">产品介绍</a>
-        <a href={helpHref}>帮助中心</a>
-      </div>
-      <div class="nav-cta">
-        <button class="btn-login" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          登录
-        </button>
-      </div>
-    </nav>
+    <SiteNav variant="marketing" lang={navLang} />
 
     <main>
       <slot />
@@ -64,20 +55,14 @@ const faviconHref = withBase("/favicon.svg");
     <footer class="marketing-footer">
       <div class="footer-inner">
         <div class="footer-brand">
-          <span class="nav-logo-mark sm">巨</span>
-          <span>巨象 Quicktion.ai</span>
+          <span class="brand-mark sm" aria-hidden="true">巨</span>
+          <span>{brandName} · quicktion.ai</span>
         </div>
-        <p class="footer-copy">© 2026 巨象科技 · 保留所有权利</p>
+        <p class="footer-copy">{s.footer.copy}</p>
       </div>
     </footer>
 
     <style is:global>
-      :root {
-        --brand-orange-50: #fff3ec;
-        --brand-orange-500: #ff6b35;
-        --brand-orange-600: #ff5500;
-        --brand-pink: #ff4d8a;
-      }
       *, *::before, *::after {
         box-sizing: border-box;
         margin: 0;
@@ -102,96 +87,9 @@ const faviconHref = withBase("/favicon.svg");
     </style>
 
     <style>
-      .marketing-nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 60px;
-        height: 64px;
-        background: rgba(255, 255, 255, 0.78);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-bottom: 1px solid rgba(240, 235, 230, 0.6);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-      }
-      .nav-brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 800;
-        font-size: 18px;
-        letter-spacing: 1px;
-        color: #1a1a1a;
-      }
-      .nav-logo-mark {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, var(--brand-orange-500), var(--brand-orange-600), var(--brand-pink));
-        color: #fff;
-        font-size: 14px;
-        font-weight: 900;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.35);
-      }
-      .nav-logo-mark.sm {
-        width: 26px;
-        height: 26px;
-        font-size: 12px;
-      }
-      .nav-logo-text .accent {
-        background: linear-gradient(135deg, var(--brand-orange-500), var(--brand-pink));
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .nav-links {
-        display: flex;
-        gap: 32px;
-        margin-left: auto;
-        margin-right: 32px;
-      }
-      .nav-links a {
-        font-size: 14px;
-        font-weight: 500;
-        color: #555;
-        transition: color 0.2s;
-      }
-      .nav-links a:hover {
-        color: var(--brand-orange-500);
-      }
-      .nav-cta {
-        display: flex;
-        gap: 12px;
-      }
-      .btn-login {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 28px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 700;
-        color: #fff;
-        letter-spacing: 2px;
-        border: none;
-        cursor: pointer;
-        background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
-        box-shadow: 0 4px 18px rgba(255, 107, 53, 0.4), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      .btn-login:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 24px rgba(255, 60, 172, 0.45);
-      }
-
       .marketing-footer {
         background: #fff;
-        padding: 24px 60px;
+        padding: 24px 40px;
         border-top: 1px solid #f0f0f0;
       }
       .footer-inner {
@@ -208,18 +106,21 @@ const faviconHref = withBase("/favicon.svg");
         font-size: 15px;
         font-weight: 700;
       }
+      .brand-mark.sm {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #ff6b35 0%, #ff5500 50%, #ff4d8a 100%);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
       .footer-copy {
         font-size: 13px;
         color: #aaa;
-      }
-
-      @media (max-width: 768px) {
-        .marketing-nav {
-          padding: 0 20px;
-        }
-        .nav-links {
-          display: none;
-        }
       }
     </style>
   </body>

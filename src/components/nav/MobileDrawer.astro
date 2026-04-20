@@ -1,0 +1,358 @@
+---
+/**
+ * 移动端汉堡按钮 + 全屏 drawer。仅 marketing 场景使用（docs 用 Starlight 自带 mobile menu）。
+ *
+ * 交互：
+ * - 汉堡按钮 @ ≤768px 显示，嵌入 SiteNav.nav-right 尾部
+ * - 点击 → slide-in drawer 从右侧进入，backdrop 淡入
+ * - 关闭：X 按钮 / backdrop 点击 / Escape / 点击内部链接 / 视窗跨回桌面
+ * - Body scroll lock：打开时 body[data-drawer-open]，配合 drawer 自身 overscroll-behavior: contain
+ *
+ * z-index：汉堡在 nav 里 (z:100)；打开时 backdrop (z:290) + drawer (z:300) 盖住 sticky nav。
+ */
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang: Lang;
+  pricingHref: string;
+  docsHref: string;
+  otherLangHref: string;
+  otherLangLabel: string;
+}
+
+const { lang, pricingHref, docsHref, otherLangHref, otherLangLabel } = Astro.props;
+const t = homeStrings[lang].nav;
+const brand = lang === "zh" ? "巨象" : "Quicktion";
+---
+
+<button
+  type="button"
+  class="drawer-toggle"
+  aria-label={t.menu}
+  aria-expanded="false"
+  aria-controls="site-drawer"
+>
+  <svg
+    class="icon-hamburger"
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+  <svg
+    class="icon-close"
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+</button>
+
+<div class="drawer-backdrop" data-drawer-backdrop hidden></div>
+
+<aside
+  id="site-drawer"
+  class="drawer"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t.menu}
+  data-open="false"
+>
+  <div class="drawer-header">
+    <span class="drawer-brand">{brand}</span>
+    <button type="button" class="drawer-close" aria-label={t.closeMenu}>
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+
+  <nav class="drawer-nav">
+    <a href={pricingHref} class="drawer-link">{t.pricing}</a>
+    <a href={docsHref} class="drawer-link">{t.docs}</a>
+    <a href={otherLangHref} class="drawer-link drawer-lang">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+      <span>{otherLangLabel}</span>
+    </a>
+  </nav>
+
+  <div class="drawer-footer">
+    <button type="button" class="drawer-cta">{t.signIn}</button>
+  </div>
+</aside>
+
+<style is:global>
+  body[data-drawer-open] {
+    overflow: hidden;
+  }
+</style>
+
+<style>
+  .drawer-toggle {
+    display: none;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--landing-text-main, #111827);
+    border-radius: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-toggle:hover {
+    background: var(--landing-hover, #fff8f3);
+  }
+  .drawer-toggle .icon-close {
+    display: none;
+  }
+  .drawer-toggle[aria-expanded="true"] .icon-hamburger {
+    display: none;
+  }
+  .drawer-toggle[aria-expanded="true"] .icon-close {
+    display: block;
+  }
+  @media (max-width: 768px) {
+    .drawer-toggle {
+      display: inline-flex;
+    }
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.32);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: 290;
+    animation: drawerBackdropFade 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-backdrop[hidden] {
+    display: none;
+  }
+
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(86vw, 360px);
+    background: #fff;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -12px 0 40px -12px rgba(15, 23, 42, 0.18);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .drawer[data-open="true"] {
+    transform: translateX(0);
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 0.8px solid var(--landing-border, #eae3db);
+    flex-shrink: 0;
+  }
+  .drawer-brand {
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    color: var(--landing-text-main, #111827);
+  }
+  .drawer-close {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--landing-text-main, #111827);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-close:hover {
+    background: var(--landing-hover, #fff8f3);
+  }
+
+  .drawer-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 8px;
+    flex: 1 1 auto;
+  }
+  .drawer-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--landing-text-main, #111827);
+    text-decoration: none;
+    transition:
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-link:hover,
+  .drawer-link:focus-visible {
+    background: var(--landing-hover, #fff8f3);
+    color: var(--landing-brand-dark, #ff5500);
+    outline: none;
+  }
+  .drawer-lang {
+    color: var(--landing-text-muted, #4b5563);
+  }
+
+  .drawer-footer {
+    padding: 16px 20px 24px;
+    border-top: 0.8px solid var(--landing-border, #eae3db);
+    flex-shrink: 0;
+  }
+  .drawer-cta {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
+    box-shadow: 0 6px 18px rgba(255, 107, 53, 0.38);
+    font-family: inherit;
+    transition:
+      transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .drawer-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(255, 60, 172, 0.45);
+  }
+
+  @keyframes drawerBackdropFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>(".drawer-toggle");
+  const drawer = document.getElementById("site-drawer");
+  const backdrop = document.querySelector<HTMLElement>("[data-drawer-backdrop]");
+  const closeBtn = drawer?.querySelector<HTMLButtonElement>(".drawer-close");
+
+  // SiteNav 有 `backdrop-filter: blur(16px)`——CSS 规范下，这会为其 position: fixed
+  // 后代创建 containing block，drawer/backdrop 会被限制在 nav 的 64px 高度里。
+  // 把它们移到 body 顶层，脱离这个 stacking context，fixed 才能相对 viewport 定位。
+  if (drawer && drawer.parentElement !== document.body) {
+    document.body.appendChild(drawer);
+  }
+  if (backdrop && backdrop.parentElement !== document.body) {
+    document.body.appendChild(backdrop);
+  }
+
+  function setOpen(open: boolean) {
+    if (!drawer || !toggle) return;
+    drawer.setAttribute("data-open", String(open));
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) {
+      document.body.setAttribute("data-drawer-open", "");
+      backdrop?.removeAttribute("hidden");
+      requestAnimationFrame(() => {
+        drawer.querySelector<HTMLElement>(".drawer-link")?.focus();
+      });
+    } else {
+      document.body.removeAttribute("data-drawer-open");
+      backdrop?.setAttribute("hidden", "");
+    }
+  }
+
+  toggle?.addEventListener("click", () => {
+    const open = drawer?.getAttribute("data-open") !== "true";
+    setOpen(open);
+    if (!open) toggle.focus();
+  });
+
+  closeBtn?.addEventListener("click", () => {
+    setOpen(false);
+    toggle?.focus();
+  });
+
+  backdrop?.addEventListener("click", () => setOpen(false));
+
+  drawer?.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("click", () => setOpen(false));
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && drawer?.getAttribute("data-open") === "true") {
+      setOpen(false);
+      toggle?.focus();
+    }
+  });
+
+  // 视窗跨回桌面时自动关闭，防止旋转/resize 卡死
+  const mql = window.matchMedia("(min-width: 769px)");
+  mql.addEventListener("change", (e) => {
+    if (e.matches) setOpen(false);
+  });
+</script>

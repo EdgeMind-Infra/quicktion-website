@@ -21,6 +21,7 @@ description: |
 | [deployment-and-base-url.md](../../../dev-notes/knowledge/deployment-and-base-url.md) | GitHub Pages 部署、`base` 配置、`withBase()` 工具、CI 工作流踩坑 |
 | [starlight-customization.md](../../../dev-notes/knowledge/starlight-customization.md) | Starlight 组件覆盖、`customCss`、sidebar 配置、i18n `root` locale、Tailwind 桥接 |
 | [toolchain.md](../../../dev-notes/knowledge/toolchain.md) | Tailwind v4（@tailwindcss/vite）、Biome、pnpm `packageManager` 字段、构建输出约定 |
+| [home-ui-patterns.md](../../../dev-notes/knowledge/home-ui-patterns.md) | 首页 UI 模式：landing token、Grid stack 切换（避免闪烁）、Hero 视频卡、SceneSwitcher 轮播 |
 
 **读取方式**：使用 Read 工具读取对应文件，遵循其中记录的最佳实践和注意事项。
 

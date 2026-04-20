@@ -1,0 +1,68 @@
+---
+/**
+ * Starlight Header 覆盖：复用首页 SiteNav + 保留 Starlight 原生的搜索 + 社交图标，
+ * 用自制 LanguageSwitcher 替代原生 <select>，主题切换暂时去掉（全站保持亮色）。
+ *
+ * 布局要点：
+ * 1. Starlight 外壳 <header class="header"> 默认有 12px 24px padding；SiteNav 自己管 padding，
+ *    所以把外壳 padding/border 归零，视觉上由 SiteNav 全权控制。
+ * 2. Mobile 下 Starlight 的汉堡按钮 (MobileMenuToggle) fixed 在右上角，SiteNav 右侧内容要给它留空。
+ * 3. SocialIcons / LanguageSwitcher 在 mobile 下用 Starlight 的 `sl-hidden md:sl-flex` 工具类隐藏，
+ *    它们会被折叠进侧边栏里。
+ */
+import Search from "@astrojs/starlight/components/Search.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import LanguageSwitcher from "../nav/LanguageSwitcher.astro";
+import SiteNav from "../nav/SiteNav.astro";
+
+const { starlightRoute } = Astro.locals;
+const lang = starlightRoute.locale === "en" ? "en" : "zh";
+---
+
+<SiteNav variant="docs" lang={lang}>
+  <div class="docs-tools" slot="right-extras">
+    <div class="search-wrap">
+      <Search {...Astro.props} />
+    </div>
+    <div class="docs-tools-desktop sl-hidden md:sl-flex">
+      <SocialIcons {...Astro.props} />
+      <LanguageSwitcher />
+    </div>
+  </div>
+</SiteNav>
+
+<style is:global>
+  :root {
+    --sl-nav-height: 4rem;
+  }
+  /* Starlight 外壳 header：padding/border 归零，让 SiteNav 接管视觉 */
+  .page > header.header {
+    padding: 0;
+    border-bottom: none;
+  }
+  @media (max-width: 50rem) {
+    .page > header.header {
+      padding-inline-end: 0;
+    }
+  }
+</style>
+
+<style>
+  .docs-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .docs-tools-desktop {
+    align-items: center;
+    gap: 4px;
+  }
+  .search-wrap {
+    min-width: 220px;
+  }
+  @media (max-width: 50rem) {
+    .search-wrap {
+      min-width: 0;
+    }
+  }
+</style>

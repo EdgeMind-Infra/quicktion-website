@@ -1,8 +1,9 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+
+import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@astrojs/react";
+import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
@@ -14,7 +15,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: {
-        "zh-CN": "巨象 Quicktion",
+        "zh-CN": "巨象",
         en: "Quicktion",
       },
       defaultLocale: "root",
@@ -26,6 +27,8 @@ export default defineConfig({
       customCss: ["./src/styles/global.css"],
       components: {
         SiteTitle: "./src/components/overrides/SiteTitle.astro",
+        Header: "./src/components/overrides/Header.astro",
+        MobileMenuFooter: "./src/components/overrides/MobileMenuFooter.astro",
       },
       social: [
         {

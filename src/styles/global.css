@@ -39,6 +39,20 @@
   --color-gray-800: var(--color-stone-800);
   --color-gray-900: var(--color-stone-900);
   --color-gray-950: var(--color-stone-950);
+
+  /* Landing（Marketing 页面）专用 token：对齐 Accio 的 --landing-* 命名 */
+  --landing-brand: #ff6b35;
+  --landing-brand-dark: #ff5500;
+  --landing-brand-light: #ffe1cc;
+  --landing-brand-rgb: 255 107 53;
+  --landing-bg: #fff;
+  --landing-card: #fff;
+  --landing-hover: #fff8f3;
+  --landing-border: #eae3db;
+  --landing-text-main: #111827;
+  --landing-text-muted: #4b5563;
+  --landing-text-light: #9ca3af;
+  --landing-header-height: 4rem;
 }
 
 /* Starlight 变量微调：让侧边栏更紧凑，内容区更宽 */

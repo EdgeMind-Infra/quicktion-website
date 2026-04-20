@@ -1,46 +1,21 @@
 ---
 // 功能特色 Tab 切换区块
-const features = [
-  {
-    key: "chat",
-    tab: "对话式触发",
-    title: "随时随地对话",
-    desc: "用自然语言与巨象对话——发布内容、联系达人、生成报告，说出来就能做到。",
-  },
-  {
-    key: "multi",
-    tab: "多店铺管理",
-    title: "多店铺，统一指挥",
-    desc: "统一下达任务，让扩张不再是负担。",
-  },
-  {
-    key: "schedule",
-    tab: "定时任务",
-    title: "设好时间，自动运转",
-    desc: "把重复性劳动变成定时任务，每周一发竞品简报、节假日自动上下架活动商品。",
-  },
-  {
-    key: "im",
-    tab: "微信飞书接入",
-    title: "微信飞书，随时下令",
-    desc: "不需要打开任何新 App，在微信和飞书里发出指令。",
-  },
-  {
-    key: "browser",
-    tab: "浏览器执行",
-    title: "浏览器里，代你操作",
-    desc: "内置浏览器自动化能力，像人一样打开网页、点击按钮、填写表单。",
-  },
-];
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].featureTabs;
 ---
 
 <section class="feature-tabs" id="features">
   <div class="sec-hdr">
-    <h2 class="sec-title">我们的特色，强大易用</h2>
+    <h2 class="sec-title">{t.sectionTitle}</h2>
   </div>
   <div class="ft-tabs" role="tablist">
     {
-      features.map((f, i) => (
+      t.features.map((f, i) => (
         <button
           class:list={["ft-tab", i === 0 ? "active" : ""]}
           data-tab={f.key}
@@ -54,14 +29,14 @@ const features = [
   </div>
   <div class="ft-content">
     {
-      features.map((f, i) => (
+      t.features.map((f, i) => (
         <div class:list={["ft-panel", i === 0 ? "active" : ""]} id={`ftab-${f.key}`}>
           <div class="ft-left">
             <h3 class="ft-feature-title">{f.title}</h3>
             <p class="ft-feature-desc">{f.desc}</p>
           </div>
           <div class="ft-right">
-            <div class="ft-placeholder">功能演示占位</div>
+            <div class="ft-placeholder">{f.placeholder}</div>
           </div>
         </div>
       ))
@@ -93,52 +68,55 @@ const features = [
     justify-content: center;
   }
   .ft-tab {
-    padding: 10px 26px;
+    padding: 12px 24px;
     border-radius: 999px;
     font-size: 14px;
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.7);
-    color: #888;
-    border: 1px solid transparent;
+    background: #fff;
+    color: var(--landing-text-muted);
+    border: 0.8px solid var(--landing-border);
     cursor: pointer;
-    backdrop-filter: blur(8px);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 0.25s, color 0.2s, background 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .ft-tab:hover {
-    color: #ff6b35;
-    background: rgba(255, 107, 53, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.12);
+    color: var(--landing-brand-dark);
+    background: var(--landing-hover);
+    border-color: var(--landing-brand-light);
   }
   .ft-tab.active {
-    background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
+    background: var(--landing-brand-dark);
     color: #fff;
-    font-weight: 700;
-    box-shadow: 0 4px 18px rgba(255, 107, 53, 0.4),
-      0 1px 0 rgba(255, 255, 255, 0.2) inset;
-    transform: translateY(-2px) scale(1.06);
+    font-weight: 500;
+    border-color: transparent;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+      0 10px 28px -8px rgb(var(--landing-brand-rgb) / 0.55);
   }
+  /* Grid stack：所有 panel 堆叠在同一个 cell，容器高度取最高者，
+     切换时纯 opacity 过渡，不触发 layout 闪烁。 */
   .ft-content {
     width: 100%;
     max-width: 1300px;
+    display: grid;
+    grid-template-columns: 1fr;
   }
   .ft-panel {
-    display: none;
+    grid-row: 1;
+    grid-column: 1;
+    display: flex;
     gap: 72px;
     align-items: center;
     background: #fff;
     border-radius: 24px;
     padding: 72px 80px;
     box-shadow: 0 4px 32px rgba(0, 0, 0, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .ft-panel.active {
-    display: flex;
-    animation: panelIn 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
-  }
-  @keyframes panelIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    opacity: 1;
+    pointer-events: auto;
   }
   .ft-left {
     flex: 0 0 320px;
@@ -173,18 +151,66 @@ const features = [
   }
   @media (max-width: 768px) {
     .feature-tabs {
-      padding: 48px 20px;
+      /* section 去掉左右 padding，让 ft-tabs 横向滚动贴边；内部区域各自管 padding */
+      padding: 48px 0;
+      gap: 32px;
+    }
+    .sec-hdr,
+    .ft-content {
+      padding: 0 16px;
     }
     .sec-title {
       font-size: 28px;
     }
+
+    /* 横向滚动 tabs：nowrap + overflow-x + 隐藏滚动条 + 右侧渐隐提示溢出 */
+    .ft-tabs {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 8px;
+      padding: 0 16px 4px;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+      mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+    }
+    .ft-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .ft-tab {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      padding: 10px 18px;
+      font-size: 13px;
+    }
+
     .ft-panel {
       flex-direction: column;
-      padding: 32px 20px;
-      gap: 24px;
+      padding: 24px 16px;
+      gap: 20px;
+      border-radius: 16px;
     }
     .ft-left {
       flex: initial;
+      width: 100%;
+    }
+    .ft-feature-title {
+      font-size: 22px;
+    }
+    .ft-feature-desc {
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    /* mockup 槽位：去掉 380px min-height，改用 16:9 aspect-ratio 自适应 */
+    .ft-right {
+      width: 100%;
+      flex: initial;
+      min-height: 0;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
     }
   }
 </style>
@@ -193,9 +219,23 @@ const features = [
   const tabs = document.querySelectorAll<HTMLButtonElement>(".ft-tab");
   const panels = document.querySelectorAll<HTMLDivElement>(".ft-panel");
 
+  const tabsContainer = document.querySelector<HTMLElement>(".ft-tabs");
+
+  function scrollActiveTabIntoCenter(idx: number) {
+    // 仅操作 .ft-tabs 容器内部的 scrollLeft，不使用 scrollIntoView
+    // （后者会触发页面级垂直滚动，让轮播把页面拽到 FeatureTabs 区域）
+    const tab = tabs[idx];
+    if (!tabsContainer || !tab) return;
+    // Desktop 下 tabs 不溢出，无需调整
+    if (tabsContainer.scrollWidth <= tabsContainer.clientWidth) return;
+    const target = tab.offsetLeft - (tabsContainer.clientWidth - tab.offsetWidth) / 2;
+    tabsContainer.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }
+
   function activate(idx: number) {
     tabs.forEach((t, i) => t.classList.toggle("active", i === idx));
     panels.forEach((p, i) => p.classList.toggle("active", i === idx));
+    scrollActiveTabIntoCenter(idx);
   }
 
   tabs.forEach((btn, i) => {

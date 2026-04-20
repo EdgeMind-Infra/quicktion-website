@@ -1,0 +1,444 @@
+---
+/**
+ * 全站顶部导航。首页 (MarketingLayout) 和帮助中心 (Starlight Header 覆盖) 共用一套视觉。
+ *
+ * - variant="marketing"：右侧显示"登录"CTA + 语言切换
+ * - variant="docs"：右侧通过 slot 注入 Starlight 的 Search / ThemeSelect / LanguageSelect
+ *
+ * "帮助中心"按钮 hover 触发 mega menu 大下拉（3 列），内容来自 src/data/help-nav.ts。
+ */
+import { helpNavGroups } from "../../data/help-nav";
+import { withBase } from "../../lib/paths";
+import MobileDrawer from "./MobileDrawer.astro";
+
+interface Props {
+  variant: "marketing" | "docs";
+  /** 当前页面语言，决定 mega menu 文本和语言切换指向 */
+  lang?: "zh" | "en";
+}
+
+const { variant, lang = "zh" } = Astro.props;
+
+const homeHref = withBase(lang === "zh" ? "/" : "/en/");
+const pricingHref = withBase(lang === "zh" ? "/pricing/" : "/en/pricing/");
+const docsHref = withBase(
+  lang === "zh" ? "/help/quick-start/what-is/" : "/en/help/quick-start/what-is/",
+);
+
+// 语言切换：直接切到对语种的首页（英文首页已经存在 /en/）
+const otherLangHref = withBase(lang === "zh" ? "/en/" : "/");
+const otherLangLabel = lang === "zh" ? "English" : "简体中文";
+
+// 条目数 > 5 的组在 mega menu 里占 2 列，items 也分两列排，避免单列太长
+const WIDE_THRESHOLD = 5;
+const groupCols = helpNavGroups.map((g) => (g.items.length > WIDE_THRESHOLD ? 2 : 1));
+const totalCols = groupCols.reduce((a, b) => a + b, 0);
+---
+
+<nav class="site-nav" data-variant={variant}>
+  <div class="nav-left">
+    <a href={homeHref} class="nav-brand">
+      <span class="brand-mark" aria-hidden="true">巨</span>
+      <span class="brand-text">{lang === "zh" ? "巨象" : "Quicktion"}</span>
+    </a>
+
+    <div class="nav-links">
+      <a href={pricingHref} class="nav-link">{lang === "zh" ? "定价" : "Pricing"}</a>
+
+      {
+        /* docs 上下文下隐藏「文档」下拉——用户已在文档里，再给文档入口是冗余 */
+        variant === "marketing" && (
+          <div class="nav-dropdown" data-dropdown="help">
+            <button
+              type="button"
+              class="nav-link nav-trigger"
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-controls="help-mega"
+            >
+              {lang === "zh" ? "文档" : "Docs"}
+              <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            <div id="help-mega" class="mega-menu" role="menu">
+              <div
+                class="mega-inner"
+                style={`grid-template-columns: repeat(${totalCols}, minmax(0, 1fr));`}
+              >
+                {helpNavGroups.map((g, i) => {
+                  const span = groupCols[i];
+                  return (
+                    <div class:list={["mega-col", span === 2 && "mega-col-wide"]}>
+                      <h4 class="mega-col-title">{lang === "zh" ? g.label : g.labelEn}</h4>
+                      <ul class:list={["mega-list", span === 2 && "mega-list-2col"]}>
+                        {g.items.map((it) => (
+                          <li>
+                            <a
+                              class="mega-item"
+                              href={withBase(`/${lang === "en" ? "en/" : ""}${it.slug}/`)}
+                            >
+                              <span class="mega-item-label">
+                                {lang === "zh" ? it.label : it.labelEn}
+                              </span>
+                              {it.desc && (
+                                <span class="mega-item-desc">
+                                  {lang === "zh" ? it.desc : it.descEn}
+                                </span>
+                              )}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <div class="nav-right">
+    {
+      variant === "marketing" ? (
+        <>
+          <a href={otherLangHref} class="lang-switch" aria-label="Switch language">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>{otherLangLabel}</span>
+          </a>
+          <button class="btn-login" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            <span>{lang === "zh" ? "登录" : "Sign in"}</span>
+          </button>
+          <MobileDrawer
+            lang={lang}
+            pricingHref={pricingHref}
+            docsHref={docsHref}
+            otherLangHref={otherLangHref}
+            otherLangLabel={otherLangLabel}
+          />
+        </>
+      ) : (
+        <slot name="right-extras" />
+      )
+    }
+  </div>
+</nav>
+
+<style>
+  .site-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 0 40px;
+    height: var(--landing-header-height, 4rem);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(234, 227, 219, 0.6);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    font-family: "Inter", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+  }
+
+  .nav-left {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    min-width: 0;
+  }
+  .nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 1px;
+    color: var(--landing-text-main, #111827);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff5500 50%, #ff4d8a 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.35);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--landing-text-muted, #4b5563);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    transition:
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-link:hover {
+    color: var(--landing-brand-dark, #ff5500);
+    background: var(--landing-hover, #fff8f3);
+  }
+  .nav-trigger {
+    font-family: inherit;
+  }
+  .chevron {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mega menu：full-width 浮层，内容居中 */
+  .nav-dropdown {
+    position: relative; /* 仅用于给 ::after hover bridge 定位，不影响 mega-menu 的 fixed 坐标 */
+  }
+  /* Hover bridge：trigger 下方延伸一段不可见的 hit-test 区域，覆盖 trigger → mega menu 之间的 gap。
+     关键：放在 .nav-dropdown 上（而不是 mega menu 的伪元素上）——mega menu 在关闭态 pointer-events: none
+     会让其伪元素一起失效，无法作为 bridge；.nav-dropdown 始终 hover-able。 */
+  .nav-dropdown::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: -8px;
+    right: -8px;
+    height: 24px;
+  }
+  .mega-menu {
+    position: fixed;
+    top: var(--landing-header-height, 4rem);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-bottom: 0.8px solid var(--landing-border, #eae3db);
+    box-shadow: 0 20px 48px -20px rgba(15, 23, 42, 0.25);
+    padding: 40px 40px 44px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition:
+      opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+  }
+  /* hover / focus / JS-controlled open 三种方式都可触发 */
+  .nav-dropdown:hover .mega-menu,
+  .nav-dropdown:focus-within .mega-menu,
+  .nav-dropdown[data-open="true"] .mega-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .nav-dropdown:hover .chevron,
+  .nav-dropdown:focus-within .chevron,
+  .nav-dropdown[data-open="true"] .chevron {
+    transform: rotate(180deg);
+  }
+  .nav-dropdown:hover .nav-trigger,
+  .nav-dropdown[data-open="true"] .nav-trigger {
+    color: var(--landing-brand-dark, #ff5500);
+    background: var(--landing-hover, #fff8f3);
+  }
+
+  .mega-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    /* grid-template-columns 由 inline style 根据组数据动态生成 */
+    gap: 40px 48px;
+  }
+  .mega-col-wide {
+    grid-column: span 2;
+  }
+  .mega-col-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--landing-text-light, #9ca3af);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .mega-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mega-list-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 24px;
+  }
+  .mega-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition:
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mega-item:hover {
+    background: var(--landing-hover, #fff8f3);
+  }
+  .mega-item-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--landing-text-main, #111827);
+    line-height: 1.4;
+  }
+  .mega-item:hover .mega-item-label {
+    color: var(--landing-brand-dark, #ff5500);
+  }
+  .mega-item-desc {
+    font-size: 12px;
+    color: var(--landing-text-light, #9ca3af);
+    line-height: 1.4;
+  }
+
+  /* Right area */
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--landing-text-muted, #4b5563);
+    text-decoration: none;
+    transition:
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lang-switch:hover {
+    color: var(--landing-brand-dark, #ff5500);
+    background: var(--landing-hover, #fff8f3);
+  }
+  .nav-link-docs {
+    padding: 8px 14px;
+  }
+  .btn-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
+    box-shadow:
+      0 4px 14px rgba(255, 107, 53, 0.38),
+      0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    transition:
+      transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+  }
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(255, 60, 172, 0.45);
+  }
+
+  @media (max-width: 768px) {
+    .site-nav {
+      padding: 0 16px;
+      gap: 8px;
+    }
+    .nav-left {
+      gap: 12px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .nav-brand {
+      font-size: 15px;
+      gap: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nav-links {
+      display: none;
+    }
+    /* marketing 场景 mobile 下 drawer 接管，隐藏内联语言切换和登录按钮 */
+    .site-nav[data-variant="marketing"] .lang-switch,
+    .site-nav[data-variant="marketing"] .btn-login {
+      display: none;
+    }
+    .nav-right {
+      flex-shrink: 0;
+    }
+    /* docs 场景：给 Starlight 的 fixed 汉堡按钮留空间（右侧 pad 相当于 menu-button-size + 安全边距） */
+    .site-nav[data-variant="docs"] {
+      padding-inline-end: calc(var(--sl-menu-button-size, 2.5rem) + 1.5rem);
+    }
+  }
+  /* 超窄屏（~iPhone 竖屏）下，如果 brand-text 仍放不下可进一步只保留 mark */
+  @media (max-width: 380px) {
+    .brand-text {
+      display: none;
+    }
+    .lang-switch span {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // 移动端点击切换（desktop 主靠 CSS :hover）。点击外部关闭。
+  const dropdowns = document.querySelectorAll<HTMLElement>(".nav-dropdown");
+
+  dropdowns.forEach((dd) => {
+    const trigger = dd.querySelector<HTMLButtonElement>(".nav-trigger");
+    trigger?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const open = dd.getAttribute("data-open") === "true";
+      dd.setAttribute("data-open", open ? "false" : "true");
+      trigger.setAttribute("aria-expanded", open ? "false" : "true");
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    dropdowns.forEach((dd) => {
+      if (!dd.contains(e.target as Node)) {
+        dd.setAttribute("data-open", "false");
+        dd.querySelector(".nav-trigger")?.setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+</script>

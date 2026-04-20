@@ -1,0 +1,253 @@
+---
+/**
+ * 语言切换下拉（仅 Starlight docs 场景使用）。
+ *
+ * 替代 Starlight 默认的原生 `<select>`，视觉与 SiteNav 的 mega menu 一致——
+ * trigger 按钮 + 卡片化下拉 + hover/click 双触发 + 点击外部关闭。
+ *
+ * 首页 marketing 场景只有中英两个选项，SiteNav 里用单链接切换，不走这里。
+ *
+ * 自己算"当前页面在目标 locale 的 URL"——不依赖 Starlight internal utility（它的
+ * `@astrojs/starlight/utils/localizedUrl` 不在 package exports 里）。
+ */
+import config from "virtual:starlight/user-config";
+
+const currentLocale = Astro.locals.starlightRoute.locale; // "en" or undefined (root)
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const pathname = Astro.url.pathname;
+
+function urlFor(targetCode: string): string {
+  // 1. 剥掉 base 前缀
+  const rel = pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
+  // 2. 如果当前在非 root locale 下，剥掉 locale 前缀
+  let core = rel;
+  if (currentLocale) {
+    const prefix = `/${currentLocale}`;
+    if (core === prefix || core === `${prefix}/`) core = "/";
+    else if (core.startsWith(`${prefix}/`)) core = core.slice(prefix.length);
+  }
+  // 3. 加上目标 locale 前缀（root locale 不加）
+  const isRoot = targetCode === "root";
+  const withLocale = isRoot ? core : `/${targetCode}${core}`;
+  // 4. 拼回 base
+  return base + withLocale;
+}
+
+interface LangOption {
+  code: string;
+  href: string;
+  label: string;
+  selected: boolean;
+}
+
+const options: LangOption[] = Object.entries(config.locales ?? {}).map(([code, locale]) => ({
+  code,
+  href: urlFor(code),
+  label: locale?.label ?? code,
+  selected: (code === "root" && !currentLocale) || code === currentLocale,
+}));
+
+const current = options.find((o) => o.selected) ?? options[0];
+---
+
+{
+  config.isMultilingual && current && (
+    <div class="lang-dropdown" data-dropdown="lang">
+      <button
+        type="button"
+        class="lang-trigger"
+        aria-haspopup="true"
+        aria-expanded="false"
+        aria-label={Astro.locals.t("languageSelect.accessibleLabel")}
+      >
+        <svg
+          class="globe"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span class="lang-current">{current.label}</span>
+        <svg
+          class="chevron"
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      <div class="lang-menu" role="menu">
+        {options.map((o) => (
+          <a
+            href={o.href}
+            class:list={["lang-item", o.selected && "selected"]}
+            role="menuitem"
+            aria-current={o.selected ? "true" : undefined}
+          >
+            <span>{o.label}</span>
+            {o.selected && (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .lang-dropdown {
+    position: relative;
+  }
+  /* Hover bridge：trigger 下方延伸 8px hit-test 区域，避免鼠标滑过 gap 丢 hover */
+  .lang-dropdown::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: -4px;
+    right: -4px;
+    height: 10px;
+  }
+
+  .lang-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--landing-text-muted, #4b5563);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lang-trigger:hover {
+    color: var(--landing-brand-dark, #ff5500);
+    background: var(--landing-hover, #fff8f3);
+  }
+  .globe {
+    opacity: 0.7;
+  }
+  .chevron {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lang-dropdown:hover .chevron,
+  .lang-dropdown:focus-within .chevron,
+  .lang-dropdown[data-open="true"] .chevron {
+    transform: rotate(180deg);
+  }
+  .lang-dropdown:hover .lang-trigger,
+  .lang-dropdown[data-open="true"] .lang-trigger {
+    color: var(--landing-brand-dark, #ff5500);
+    background: var(--landing-hover, #fff8f3);
+  }
+
+  .lang-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 160px;
+    padding: 6px;
+    background: #fff;
+    border: 0.8px solid var(--landing-border, #eae3db);
+    border-radius: 12px;
+    box-shadow:
+      0 20px 40px -12px rgba(15, 23, 42, 0.18),
+      0 8px 16px -8px rgba(15, 23, 42, 0.08);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
+    transition:
+      opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+  }
+  .lang-dropdown:hover .lang-menu,
+  .lang-dropdown:focus-within .lang-menu,
+  .lang-dropdown[data-open="true"] .lang-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .lang-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--landing-text-main, #111827);
+    text-decoration: none;
+    transition:
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lang-item:hover {
+    background: var(--landing-hover, #fff8f3);
+    color: var(--landing-brand-dark, #ff5500);
+  }
+  .lang-item.selected {
+    color: var(--landing-brand-dark, #ff5500);
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  const dropdowns = document.querySelectorAll<HTMLElement>('[data-dropdown="lang"]');
+
+  dropdowns.forEach((dd) => {
+    const trigger = dd.querySelector<HTMLButtonElement>(".lang-trigger");
+    trigger?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const open = dd.getAttribute("data-open") === "true";
+      dd.setAttribute("data-open", open ? "false" : "true");
+      trigger.setAttribute("aria-expanded", open ? "false" : "true");
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    dropdowns.forEach((dd) => {
+      if (!dd.contains(e.target as Node)) {
+        dd.setAttribute("data-open", "false");
+        dd.querySelector(".lang-trigger")?.setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+</script>

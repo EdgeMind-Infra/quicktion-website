@@ -1,48 +1,32 @@
 ---
 // Agent 三兄弟展示：分析 / 策划 / 执行
-const agents = [
-  {
-    badge: "分析 Agent",
-    title: "专属「数据医生」",
-    desc: "接入平台一手数据，诊断经营盲区，给出可落地的增长建议。",
-    tags: ["店铺诊断报告", "竞品动态监控", "爆款内容解码"],
-    reverse: false,
-  },
-  {
-    badge: "策划 Agent",
-    title: "你的「点子智囊团」",
-    desc: "基于数据生成营销方案，说出需求，即可获得可落地的完整策略。",
-    tags: ["达人营销方案", "本地推投流策略", "商品活动策划"],
-    reverse: true,
-  },
-  {
-    badge: "执行 Agent",
-    title: "数字员工上岗",
-    desc: "方案确定后自动执行，重复琐碎的工作全部交给数字员工。",
-    tags: ["抖音达人合作", "线上内容运营", "经营指标提升"],
-    reverse: false,
-  },
-];
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].agents;
 ---
 
 <section class="product-section" id="product">
   <div class="sec-hdr">
-    <h2 class="sec-title">从诊断到优化，营销全流程闭环</h2>
-    <p class="sec-sub">AI 数字员工分工协作，让每个环节都有专属智能助理</p>
+    <h2 class="sec-title">{t.sectionTitle}</h2>
+    <p class="sec-sub">{t.sectionSub}</p>
   </div>
   {
-    agents.map((a) => (
-      <div class:list={["agent-row", a.reverse ? "reverse" : ""]}>
+    t.items.map((a, i) => (
+      <div class:list={["agent-row", i % 2 === 1 ? "reverse" : ""]}>
         <div class="agent-text">
           <span class="agent-badge">{a.badge}</span>
           <h3 class="agent-title">{a.title}</h3>
           <p class="agent-desc">{a.desc}</p>
           <div class="agent-tags">
-            {a.tags.map((t) => <span class="agent-tag">{t}</span>)}
+            {a.tags.map((tag) => <span class="agent-tag">{tag}</span>)}
           </div>
         </div>
         <div class="agent-ui">
-          <div class="agent-ui-placeholder">界面演示占位</div>
+          <div class="agent-ui-placeholder">{t.uiPlaceholder}</div>
         </div>
       </div>
     ))
@@ -168,6 +152,9 @@ const agents = [
       flex: initial;
     }
     .agent-ui {
+      /* 父 .agent-row 在 mobile 下 flex-direction: column；继承的 `flex: 1` 里 flex-basis: 0%
+         会在主轴（垂直）上覆盖 height，导致 .agent-ui 塌到 ~24px 占位高。必须 flex: initial。 */
+      flex: initial;
       width: 100%;
       height: 280px;
     }

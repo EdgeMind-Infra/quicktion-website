@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [dev-notes/knowledge/deployment-and-base-url.md](dev-notes/knowledge/deployment-and-base-url.md) — GitHub Pages 部署、`base` 配置、`withBase()` 工具、CI 工作流踩坑
 - [dev-notes/knowledge/starlight-customization.md](dev-notes/knowledge/starlight-customization.md) — Starlight 组件覆盖、`customCss`、sidebar、i18n `root` locale、Tailwind 桥接
 - [dev-notes/knowledge/toolchain.md](dev-notes/knowledge/toolchain.md) — Tailwind v4、Biome、pnpm `packageManager` 字段、Astro 构建约定
+- [dev-notes/knowledge/home-ui-patterns.md](dev-notes/knowledge/home-ui-patterns.md) — 首页 UI 模式：landing token、Grid stack 切换（避免闪烁）、Hero 视频卡、SceneSwitcher 轮播
 
 ## Project Overview
 

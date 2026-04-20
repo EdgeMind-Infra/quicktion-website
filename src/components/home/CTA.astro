@@ -1,12 +1,19 @@
 ---
 // 落地 CTA 区块
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].cta;
 ---
 
 <section class="cta-section">
-  <h2 class="cta-title">立即体验巨象</h2>
-  <p class="cta-sub">专为本地生活商家打造，AI Agent 帮你完成一切营销工作。</p>
+  <h2 class="cta-title">{t.title}</h2>
+  <p class="cta-sub">{t.sub}</p>
   <div class="cta-btns">
-    <button class="cta-btn-primary" type="button">免费体验</button>
+    <button class="cta-btn-primary" type="button">{t.button}</button>
   </div>
 </section>
 
@@ -52,10 +59,26 @@
   }
   @media (max-width: 768px) {
     .cta-section {
-      padding: 72px 20px;
+      padding: 64px 16px;
+      gap: 12px;
     }
     .cta-title {
-      font-size: 36px;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+    .cta-sub {
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 420px;
+    }
+    .cta-btns {
+      width: 100%;
+      margin-top: 20px;
+    }
+    .cta-btn-primary {
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 16px;
     }
   }
 </style>

@@ -1,0 +1,38 @@
+---
+/**
+ * Mobile 折叠菜单底部（Starlight MobileMenuFooter 覆盖）。
+ *
+ * 去掉主题切换（全站保持亮色品牌）。保留原生 LanguageSelect——在 touch 设备上原生
+ * <select> 会唤起系统选择器，体验反而比自制 dropdown 更好；desktop 走自制
+ * LanguageSwitcher，两者互不影响。
+ */
+import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+---
+
+<div class="mobile-preferences sl-flex">
+  <div class="social-icons">
+    <SocialIcons {...Astro.props} />
+  </div>
+  <LanguageSelect {...Astro.props} />
+</div>
+
+<style>
+  .social-icons {
+    display: flex;
+    margin-inline-end: auto;
+    gap: 1rem;
+    align-items: center;
+    padding-block: 1rem;
+  }
+  .social-icons:empty {
+    display: none;
+  }
+  .mobile-preferences {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--sl-color-gray-6);
+    column-gap: 1rem;
+    padding: 0.5rem 0;
+  }
+</style>

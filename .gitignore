@@ -20,5 +20,9 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
-# Claude Code — 本地私有配置（settings.json 和 skills/ 入库）
+# Claude Code — 本地私有配置；.claude/skills/dev-workflow/ 入库（项目级 skill），其余 skills 忽略
+# 注意：必须用 `.claude/skills/*` 而非 `.claude/skills`，否则 git 父目录 ignore 规则会屏蔽子路径的反向 include
 .claude/settings.local.json
+.claude/skills/*
+!.claude/skills/dev-workflow/
+.playwright*
