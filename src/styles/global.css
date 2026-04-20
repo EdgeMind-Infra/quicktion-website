@@ -53,6 +53,10 @@
   --landing-text-muted: #4b5563;
   --landing-text-light: #9ca3af;
   --landing-header-height: 4rem;
+  /* 全站 container：所有 section 内容用 max-width 居中，大屏左右自然留白；
+     各组件都引用此变量，避免 1200 / 1300 / 1400 不一致。 */
+  --landing-container: 1200px;
+  --landing-container-px: 40px;
 }
 
 /* Starlight 变量微调：让侧边栏更紧凑，内容区更宽 */

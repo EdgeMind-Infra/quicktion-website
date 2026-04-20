@@ -4,6 +4,71 @@
 
 本主题覆盖 `src/components/home/*` 下营销首页的 UI 组件模式、临时依赖、品牌 token 用法。这些是做首页改版时会反复用到的通用做法。
 
+## 全站 container 宽度统一
+
+### 所有 section 用同一个 `--landing-container`
+
+大屏下 header 的 Logo 和下方 Hero 的 H1、视频卡要左右对齐——视觉一致性的基础。早期各组件 max-width 乱写（Hero 1200 / FeatureTabs 1300 / AgentShowcase 1300 / Footer 1400），大屏上 logo 和内容不在同一垂直线。
+
+修：[src/styles/global.css](../../src/styles/global.css) 定两个 token，所有 section 引用：
+
+```css
+:root {
+  --landing-container: 1200px;
+  --landing-container-px: 40px;
+}
+```
+
+引用方：`.hero-inner`、`.ft-content`、`.agent-row`、`.mega-inner`、`.footer-inner`、`.site-nav-inner` 全部 `max-width: var(--landing-container)` + `margin: 0 auto`。
+
+Accio 用 1400px 作为 container，主流 SaaS 多数在 1200–1280 之间。1200 在 1440 viewport 下留 120px 两侧空白，视觉舒适。
+
+### SiteNav 必须"外壳全宽 + 内部 wrapper 居中"
+
+Header 不能直接 `.site-nav { max-width: 1200 }`——那样 sticky 背景、border、毛玻璃都只覆盖中间 1200px，两侧穿帮。正确结构：
+
+```astro
+<nav class="site-nav">              <!-- 外壳：full-width、sticky、毛玻璃 -->
+  <div class="site-nav-inner">      <!-- 内部：max-width 居中、padding -->
+    ...
+  </div>
+</nav>
+```
+
+```css
+.site-nav {
+  /* 全宽布局层：高度、背景、sticky */
+  position: sticky; top: 0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  ...
+}
+.site-nav-inner {
+  max-width: var(--landing-container);
+  margin: 0 auto;
+  padding: 0 var(--landing-container-px);
+  display: flex;
+  /* ...所有布局 */
+}
+```
+
+### docs variant 要特例：nav 全宽对齐 sidebar
+
+Starlight 文档页的左侧 sidebar 从屏幕 `left: 0` 开始；如果 docs 下 nav 也用 1200 container 居中，logo 会悬空在 sidebar 的右侧、看起来脱离主视觉。
+
+docs variant 下让 `.site-nav-inner` 全宽、padding 对齐 Starlight 自己的 `--sl-nav-pad-x`：
+
+```css
+.site-nav[data-variant="docs"] .site-nav-inner {
+  max-width: none;
+  padding: 0 var(--sl-nav-pad-x, 1.5rem);
+}
+```
+
+这样 docs 下 logo 紧贴 sidebar 起点，marketing 下 logo 和 Hero 内容对齐——两种场景各自最优。
+
+**相关文件**：[src/styles/global.css](../../src/styles/global.css)、[src/components/nav/SiteNav.astro](../../src/components/nav/SiteNav.astro)
+
 ## Landing Token 命名
 
 ### `--landing-*` 系列独立于 `--color-accent-*`

@@ -36,7 +36,8 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
 ---
 
 <nav class="site-nav" data-variant={variant}>
-  <div class="nav-left">
+  <div class="site-nav-inner">
+    <div class="nav-left">
     <a href={homeHref} class="nav-brand">
       <span class="brand-mark" aria-hidden="true">巨</span>
       <span class="brand-text">{lang === "zh" ? "巨象" : "Quicktion"}</span>
@@ -127,15 +128,12 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
       )
     }
   </div>
+  </div>
 </nav>
 
 <style>
+  /* 外壳：全宽、sticky、毛玻璃背景。内部 wrapper 做 container 居中。 */
   .site-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    padding: 0 40px;
     height: var(--landing-header-height, 4rem);
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(16px);
@@ -145,6 +143,22 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     top: 0;
     z-index: 100;
     font-family: "Inter", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+  }
+  .site-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    height: 100%;
+    max-width: var(--landing-container, 1200px);
+    margin: 0 auto;
+    padding: 0 var(--landing-container-px, 40px);
+  }
+  /* docs 场景下 Starlight sidebar 从屏幕左边缘 0 开始，nav 居中到 container 会让 logo
+     悬空在 sidebar 上方。让 docs 下 nav 全宽，padding 对齐 Starlight 默认 --sl-nav-pad-x。 */
+  .site-nav[data-variant="docs"] .site-nav-inner {
+    max-width: none;
+    padding: 0 var(--sl-nav-pad-x, 1.5rem);
   }
 
   .nav-left {
@@ -264,7 +278,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
   }
 
   .mega-inner {
-    max-width: 1200px;
+    max-width: var(--landing-container, 1200px);
     margin: 0 auto;
     display: grid;
     /* grid-template-columns 由 inline style 根据组数据动态生成 */
@@ -376,7 +390,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
   }
 
   @media (max-width: 768px) {
-    .site-nav {
+    .site-nav-inner {
       padding: 0 16px;
       gap: 8px;
     }
@@ -404,7 +418,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
       flex-shrink: 0;
     }
     /* docs 场景：给 Starlight 的 fixed 汉堡按钮留空间（右侧 pad 相当于 menu-button-size + 安全边距） */
-    .site-nav[data-variant="docs"] {
+    .site-nav[data-variant="docs"] .site-nav-inner {
       padding-inline-end: calc(var(--sl-menu-button-size, 2.5rem) + 1.5rem);
     }
   }

@@ -96,7 +96,7 @@ const t = homeStrings[lang].featureTabs;
      切换时纯 opacity 过渡，不触发 layout 闪烁。 */
   .ft-content {
     width: 100%;
-    max-width: 1300px;
+    max-width: var(--landing-container, 1200px);
     display: grid;
     grid-template-columns: 1fr;
   }
