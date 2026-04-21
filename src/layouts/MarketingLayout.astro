@@ -55,7 +55,7 @@ const faviconHref = withBase("/favicon.svg");
     <footer class="marketing-footer">
       <div class="footer-inner">
         <div class="footer-brand">
-          <span class="brand-mark sm" aria-hidden="true">巨</span>
+          <img src={faviconHref} alt="" class="brand-mark sm" aria-hidden="true" />
           <span>{brandName} · quicktion.ai</span>
         </div>
         <p class="footer-copy">{s.footer.copy}</p>
@@ -109,14 +109,8 @@ const faviconHref = withBase("/favicon.svg");
       .brand-mark.sm {
         width: 26px;
         height: 26px;
-        border-radius: 6px;
-        background: linear-gradient(135deg, #ff6b35 0%, #ff5500 50%, #ff4d8a 100%);
-        color: #fff;
-        font-size: 12px;
-        font-weight: 900;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: inline-block;
+        flex-shrink: 0;
       }
       .footer-copy {
         font-size: 13px;

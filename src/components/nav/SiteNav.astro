@@ -22,6 +22,7 @@ interface Props {
 const { variant, lang = "zh" } = Astro.props;
 
 const homeHref = withBase(lang === "zh" ? "/" : "/en/");
+const brandLogo = withBase("/favicon.svg");
 const docsHref = withBase(
   lang === "zh" ? "/help/quick-start/what-is/" : "/en/help/quick-start/what-is/",
 );
@@ -40,7 +41,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
   <div class="site-nav-inner">
     <div class="nav-left">
     <a href={homeHref} class="nav-brand">
-      <span class="brand-mark" aria-hidden="true">巨</span>
+      <img src={brandLogo} alt="" class="brand-mark" aria-hidden="true" />
       <span class="brand-text">{lang === "zh" ? "巨象" : "Quicktion"}</span>
     </a>
 
@@ -179,15 +180,8 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
   .brand-mark {
     width: 30px;
     height: 30px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #ff6b35 0%, #ff5500 50%, #ff4d8a 100%);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 900;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.35);
+    display: inline-block;
+    flex-shrink: 0;
   }
 
   .nav-links {
