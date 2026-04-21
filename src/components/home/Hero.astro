@@ -1,6 +1,7 @@
 ---
-// 首页 Hero：单列居中 H1 + pill 标签 + 双 CTA + 下方 16:9 视频卡
+import Icon from "../icons/Icon.astro";
 import { type Lang, homeStrings } from "../../i18n/home";
+import { AGENT_CONSOLE_URL } from "../../lib/links";
 
 interface Props {
   lang?: Lang;
@@ -8,52 +9,42 @@ interface Props {
 const { lang = "zh" } = Astro.props;
 const t = homeStrings[lang].hero;
 
-// 临时热链 Accio 的产品 demo 视频作为占位——上线前必须替换为 Quicktion 自己的录屏
-const HERO_VIDEO_SRC = "https://work-download.accio.com/videos/home.mp4";
-const HERO_VIDEO_POSTER =
-  "https://s.alicdn.com/@img/imgextra/i3/O1CN01Sh4XDv1gFLkgsu2lg_!!6000000004112-2-tps-3016-1890.png";
+// Hero 视频托管在客户自己的阿里云 OSS。不入仓库（7MB+），也避免 Accio 热链风险。
+const HERO_VIDEO_SRC =
+  "https://edgemind-oss.oss-cn-hangzhou.aliyuncs.com/slices/%E8%90%A5%E9%94%80%E6%B5%81%E7%A8%8B.mp4";
 ---
 
 <section class="hero">
   <div class="hero-inner">
-    <h1 class="hero-title">
-      {t.title}
-    </h1>
+    <h1 class="hero-title">{t.title}</h1>
+    <p class="hero-sub">{t.subtitle}</p>
 
     <div class="hero-pills">
-      <span class="hero-pill"><span class="pill-glyph">✦</span>{t.pill1}</span>
-      <span class="hero-pill"><span class="pill-glyph">✦</span>{t.pill2}</span>
-      <span class="hero-pill"><span class="pill-glyph">✦</span>{t.pill3}</span>
+      <span class="hero-pill"><Icon name="clock" size={14} class="pill-icon" />{t.pill1}</span>
+      <span class="hero-pill"><Icon name="thumbs-up" size={14} class="pill-icon" />{t.pill2}</span>
+      <span class="hero-pill"><Icon name="zap" size={14} class="pill-icon" />{t.pill3}</span>
     </div>
 
-    <p class="hero-desc">
-      {t.desc}
-    </p>
+    <p class="hero-desc">{t.desc}</p>
 
     <div class="hero-ctas">
-      <button class="btn-primary" type="button">
+      <a class="btn-primary" href={AGENT_CONSOLE_URL}>
+        <Icon name="rocket" size={18} strokeWidth={2.2} />
         <span>{t.ctaPrimary}</span>
-      </button>
+      </a>
       <button class="btn-secondary" type="button" id="btnDemo">
+        <Icon name="play-circle" size={18} strokeWidth={2.2} />
         <span>{t.ctaSecondary}</span>
       </button>
     </div>
 
     <div class="hero-video" id="heroVideo">
-      <div class="video-chrome" aria-hidden="true">
+      <div class="video-topbar" aria-hidden="true">
         <span class="dot dot-r"></span>
         <span class="dot dot-y"></span>
         <span class="dot dot-g"></span>
       </div>
-      <video
-        class="video-media"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        poster={HERO_VIDEO_POSTER}
-      >
+      <video class="video-media" autoplay muted loop playsinline preload="metadata">
         <source src={HERO_VIDEO_SRC} type="video/mp4" />
       </video>
     </div>
@@ -63,12 +54,13 @@ const HERO_VIDEO_POSTER =
 <style>
   .hero {
     background: radial-gradient(
-      ellipse closest-side at 50% 38%,
-      var(--landing-brand-light) 0%,
-      #fff5ee 40%,
-      #fff 80%
+      ellipse closest-side at 50% 42%,
+      #ffe0c4 0%,
+      #ffeedd 35%,
+      var(--landing-brand-light) 65%,
+      #ffffff 100%
     );
-    padding: 72px 24px 96px;
+    padding: 72px 24px 72px;
   }
   .hero-inner {
     max-width: var(--landing-container, 1200px);
@@ -76,55 +68,68 @@ const HERO_VIDEO_POSTER =
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
   }
 
   .hero-title {
     font-family: "Noto Sans SC", "PingFang SC", sans-serif;
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 800;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
+    font-size: clamp(48px, 7vw, 72px);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: 6px;
     color: var(--landing-text-main);
     text-align: center;
-    margin-top: 12px;
+  }
+
+  .hero-sub {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+    font-size: clamp(20px, 2.4vw, 28px);
+    font-weight: 700;
+    color: var(--landing-text-main);
+    text-align: center;
+    line-height: 1.4;
+    letter-spacing: -0.2px;
+    margin-top: 4px;
   }
 
   .hero-pills {
     display: flex;
-    gap: 10px;
+    gap: 14px;
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 4px;
   }
   .hero-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--landing-brand-light);
-    border-radius: 999px;
-    padding: 6px 14px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 7px 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     font-size: 13px;
     font-weight: 600;
-    color: var(--landing-brand-dark);
+    color: #334155;
   }
-  .pill-glyph {
+  .hero-pill :global(.pill-icon) {
     color: var(--landing-brand);
-    font-size: 11px;
   }
 
   .hero-desc {
-    font-size: 17px;
-    color: var(--landing-text-muted);
+    font-size: clamp(16px, 1.5vw, 18px);
+    color: #888;
     text-align: center;
     line-height: 1.7;
-    max-width: 640px;
+    font-weight: 400;
+    max-width: 720px;
+    margin-top: 4px;
   }
 
   .hero-ctas {
     display: flex;
     gap: 16px;
     align-items: center;
-    margin-top: 12px;
+    margin-top: 8px;
   }
   .btn-primary,
   .btn-secondary {
@@ -132,10 +137,10 @@ const HERO_VIDEO_POSTER =
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 14px 32px;
+    padding: 14px 56px;
     border-radius: 999px;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 500;
     border: none;
     cursor: pointer;
     transition:
@@ -143,74 +148,87 @@ const HERO_VIDEO_POSTER =
       box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
       filter 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: inherit;
+    color: #fff;
+  }
+  .btn-primary,
+  .btn-secondary {
+    background: linear-gradient(
+      to right,
+      var(--landing-brand-dark),
+      var(--landing-brand),
+      #ff6070
+    );
+    background-size: 210% 100%;
   }
   .btn-primary {
-    background: var(--landing-brand-dark);
-    color: #fff;
-    box-shadow:
-      0 10px 15px -3px rgb(var(--landing-brand-rgb) / 0.3),
-      0 4px 6px -4px rgb(var(--landing-brand-rgb) / 0.25);
+    background-position: 0% 0%;
+    box-shadow: 0 10px 24px rgb(var(--landing-brand-rgb) / 0.35);
   }
   .btn-secondary {
-    background: var(--landing-brand);
-    color: #fff;
-    box-shadow:
-      0 10px 15px -3px rgb(var(--landing-brand-rgb) / 0.25),
-      0 4px 6px -4px rgb(var(--landing-brand-rgb) / 0.2);
+    background-position: 100% 0%;
+    box-shadow: 0 10px 24px rgba(255, 80, 140, 0.25);
   }
   .btn-primary:hover,
   .btn-secondary:hover {
     transform: translateY(-1px);
-    filter: brightness(1.04);
-    box-shadow:
-      0 14px 24px -4px rgb(var(--landing-brand-rgb) / 0.4),
-      0 6px 10px -4px rgb(var(--landing-brand-rgb) / 0.3);
+    filter: brightness(1.08);
   }
 
+  /* macOS 风窗口：白色顶部栏（含红/黄/绿 traffic-light）+ 下方视频，无 1px 边框 */
   .hero-video {
-    position: relative;
     width: 100%;
-    max-width: 1120px;
-    aspect-ratio: 16 / 9;
-    margin-top: 40px;
-    border-radius: 24px;
+    max-width: 1200px;
+    margin-top: 36px;
+    border-radius: 16px;
     overflow: hidden;
-    background: #0f172a;
-    border: 0.8px solid var(--landing-border);
-    box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.25);
-  }
-  .video-chrome {
-    position: absolute;
-    top: 14px;
-    left: 16px;
+    background: #000;
+    box-shadow: 0 20px 44px -12px rgba(15, 23, 42, 0.18);
     display: flex;
-    gap: 6px;
-    z-index: 2;
+    flex-direction: column;
   }
-  .video-chrome .dot {
-    width: 10px;
-    height: 10px;
+  .video-topbar {
+    height: 44px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    flex-shrink: 0;
+  }
+  .video-topbar .dot {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
   }
-  .dot-r { background: #ff5f57; }
-  .dot-y { background: #febc2e; }
-  .dot-g { background: #28c840; }
+  .dot-r {
+    background: #ff5f57;
+  }
+  .dot-y {
+    background: #febc2e;
+  }
+  .dot-g {
+    background: #28c840;
+  }
   .video-media {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     display: block;
   }
 
   @media (max-width: 768px) {
     .hero {
-      padding: 48px 16px 64px;
+      padding: 48px 16px 56px;
     }
     .hero-title {
-      font-size: clamp(28px, 8vw, 38px);
+      font-size: clamp(36px, 12vw, 52px);
+      letter-spacing: 3px;
+    }
+    .hero-sub {
+      font-size: 20px;
     }
     .hero-desc {
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1.65;
     }
     .hero-ctas {
@@ -230,7 +248,16 @@ const HERO_VIDEO_POSTER =
     }
     .hero-video {
       margin-top: 24px;
-      border-radius: 16px;
+      border-radius: 12px;
+    }
+    .video-topbar {
+      height: 36px;
+      padding: 0 14px;
+      gap: 6px;
+    }
+    .video-topbar .dot {
+      width: 10px;
+      height: 10px;
     }
   }
 </style>

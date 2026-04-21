@@ -1,0 +1,199 @@
+---
+// 通用图片轮播：3+ 张图自动切换 + prev/next 按钮 + dots 导航
+// 用法：<Carousel images={[url1, url2, url3]} alt="分析 Agent" />
+// 数据：父组件传入 images 数组（任意长度），组件按顺序渲染并循环。
+
+interface Props {
+  images: string[];
+  alt?: string;
+  /** 自动切换间隔（毫秒），默认 4000。传 0 关闭自动切换。 */
+  interval?: number;
+}
+
+const { images, alt = "", interval = 4000 } = Astro.props;
+---
+
+<div
+  class="qt-carousel"
+  data-slides={images.length}
+  data-interval={interval}
+>
+  <div class="carousel-track">
+    {
+      images.map((src, i) => (
+        <div class="carousel-slide">
+          <img src={src} alt={`${alt} ${i + 1}`} loading="lazy" />
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    images.length > 1 && (
+      <>
+        <button class="carousel-btn prev" type="button" aria-label="Previous">
+          &#8249;
+        </button>
+        <button class="carousel-btn next" type="button" aria-label="Next">
+          &#8250;
+        </button>
+        <div class="carousel-dots">
+          {images.map((_, i) => (
+            <span class:list={["carousel-dot", i === 0 ? "active" : ""]} />
+          ))}
+        </div>
+      </>
+    )
+  }
+</div>
+
+<style>
+  .qt-carousel {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+  }
+  .carousel-track {
+    display: flex;
+    height: calc(100% - 36px);
+    transition: transform 0.5s ease;
+  }
+  .carousel-slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    background: #f5f5f5;
+    overflow: hidden;
+  }
+  .carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    display: block;
+  }
+  .carousel-dots {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #fff;
+  }
+  .carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .carousel-dot.active {
+    background: var(--landing-brand);
+  }
+  .carousel-btn {
+    position: absolute;
+    top: calc(50% - 18px);
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: #555;
+    z-index: 10;
+    transition: box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .carousel-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  .carousel-btn.prev {
+    left: 12px;
+  }
+  .carousel-btn.next {
+    right: 12px;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".qt-carousel").forEach((carousel) => {
+    const track = carousel.querySelector<HTMLElement>(".carousel-track");
+    const dots = carousel.querySelectorAll<HTMLElement>(".carousel-dot");
+    const btnPrev = carousel.querySelector<HTMLButtonElement>(".carousel-btn.prev");
+    const btnNext = carousel.querySelector<HTMLButtonElement>(".carousel-btn.next");
+    const total = Number(carousel.dataset.slides ?? "1");
+    const interval = Number(carousel.dataset.interval ?? "4000");
+
+    if (!track || total < 2) return;
+
+    let cur = 0;
+    let autoTimer: number | undefined;
+    let visible = false;
+
+    function goTo(n: number) {
+      cur = ((n % total) + total) % total;
+      if (track) track.style.transform = `translateX(-${cur * 100}%)`;
+      dots.forEach((d, i) => d.classList.toggle("active", i === cur));
+    }
+
+    function stopAuto() {
+      if (autoTimer) {
+        window.clearInterval(autoTimer);
+        autoTimer = undefined;
+      }
+    }
+
+    function startAuto() {
+      stopAuto();
+      if (interval > 0 && visible) {
+        autoTimer = window.setInterval(() => goTo(cur + 1), interval);
+      }
+    }
+
+    dots.forEach((d, i) =>
+      d.addEventListener("click", () => {
+        goTo(i);
+        startAuto();
+      })
+    );
+    btnPrev?.addEventListener("click", () => {
+      goTo(cur - 1);
+      startAuto();
+    });
+    btnNext?.addEventListener("click", () => {
+      goTo(cur + 1);
+      startAuto();
+    });
+
+    // 仅在元素可见时跑 interval，节省 off-screen 时的 reflow
+    const io = new IntersectionObserver(
+      (entries) => {
+        visible = entries[0]?.isIntersecting ?? false;
+        if (visible) startAuto();
+        else stopAuto();
+      },
+      { threshold: 0.1 }
+    );
+    io.observe(carousel);
+
+    // 标签页切后台也停
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopAuto();
+      else if (visible) startAuto();
+    });
+  });
+</script>

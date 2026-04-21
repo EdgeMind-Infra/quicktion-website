@@ -1,0 +1,294 @@
+---
+import { type Lang, type ScoreCardKey, homeStrings } from "../../i18n/home";
+import { withBase } from "../../lib/paths";
+import Icon, { type IconName } from "../icons/Icon.astro";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].score;
+
+// 卡面视觉 —— 文案走 i18n，图片/颜色/icon 放这里。类型系统保证 ScoreCardKey 全覆盖。
+const cardConfig: Record<ScoreCardKey, { color: string; img: string; icon: IconName }> = {
+  store: {
+    color: "var(--landing-brand-dark)",
+    img: withBase("/images/score/store.png"),
+    icon: "store",
+  },
+  goods: {
+    color: "#ff8c42",
+    img: withBase("/images/score/goods.png"),
+    icon: "package",
+  },
+  traffic: {
+    color: "#5b8a78",
+    img: withBase("/images/score/traffic.png"),
+    icon: "zap",
+  },
+  revenue: {
+    color: "#3a6858",
+    img: withBase("/images/score/revenue.png"),
+    icon: "coins",
+  },
+};
+---
+
+<section class="score-section" id="score">
+  <div class="score-hdr">
+    <h2 class="score-title">
+      {t.sectionTitleLeading}<em>{t.sectionTitleAccent}</em>
+      <span class="score-title-deco"></span>
+    </h2>
+    <p class="score-sub">{t.sectionSub}</p>
+  </div>
+
+  <div class="score-cards">
+    {
+      t.cards.map((c) => {
+        const cfg = cardConfig[c.key];
+        return (
+          <div class="score-card" style={`--card-color:${cfg.color}`}>
+            <div class="score-card-head">
+              <div class="score-card-icon">
+                <Icon name={cfg.icon} size={24} strokeWidth={2.2} />
+              </div>
+              <div class="score-card-title">{c.title}</div>
+            </div>
+            <div class="score-card-divider" />
+            <div class="score-card-points">
+              {c.points.map((p) => (
+                <span class="score-card-point">{p}</span>
+              ))}
+            </div>
+            <div class="score-card-img">
+              <img src={cfg.img} alt={c.title} loading="lazy" />
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</section>
+
+<style>
+  .score-section {
+    padding: 100px 24px;
+    background: linear-gradient(160deg, #fff9f5 0%, #fff4ee 50%, #fff0e6 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 56px;
+  }
+  .score-section::before,
+  .score-section::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .score-section::before {
+    top: -120px;
+    right: -120px;
+    width: 480px;
+    height: 480px;
+    background: radial-gradient(
+      circle,
+      rgb(var(--landing-brand-rgb) / 0.12) 0%,
+      transparent 70%
+    );
+  }
+  .score-section::after {
+    bottom: -80px;
+    left: -80px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(
+      circle,
+      rgba(255, 140, 66, 0.08) 0%,
+      transparent 70%
+    );
+  }
+
+  .score-hdr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .score-title {
+    font-size: 38px;
+    font-weight: 900;
+    color: #1a1a1a;
+    line-height: 1.15;
+    letter-spacing: -1px;
+  }
+  .score-title em {
+    font-style: normal;
+    color: var(--landing-brand);
+  }
+  .score-title-deco {
+    display: block;
+    width: 48px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--landing-brand-dark),
+      #ff8c42
+    );
+    margin: 6px auto 0;
+  }
+  .score-sub {
+    font-size: 16px;
+    color: #aaa;
+    font-weight: 400;
+    max-width: 480px;
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .score-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    width: 100%;
+    max-width: 1000px;
+    position: relative;
+    z-index: 1;
+  }
+  .score-card {
+    background: linear-gradient(160deg, #fdfcfb 0%, #f9f6f2 100%);
+    border-radius: 20px;
+    padding: 32px 24px 0;
+    border: 1.5px solid #f0ede9;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    text-align: center;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .score-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--card-color);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .score-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    border-color: transparent;
+  }
+  .score-card:hover::before {
+    opacity: 1;
+  }
+
+  .score-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+  }
+  .score-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 从 --card-color 生成 10% 透明底 + 纯色 icon */
+    background: color-mix(in srgb, var(--card-color) 12%, transparent);
+    color: var(--card-color);
+  }
+  .score-card-title {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: #1a1a1a;
+    letter-spacing: 3px;
+  }
+  .score-card-divider {
+    width: 100%;
+    height: 1px;
+    background: #f5f0eb;
+  }
+  .score-card-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .score-card-point {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(245, 243, 240, 0.85) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.07),
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  .score-card-img {
+    width: calc(100% + 48px);
+    margin: auto -24px 0;
+    height: 160px;
+    background: #f5f1ed;
+    overflow: hidden;
+    border-radius: 0 0 18px 18px;
+  }
+  .score-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    display: block;
+  }
+
+  @media (max-width: 768px) {
+    .score-section {
+      padding: 64px 16px;
+      gap: 40px;
+    }
+    .score-title {
+      font-size: 28px;
+    }
+    .score-cards {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .score-card-title {
+      font-size: 22px;
+      letter-spacing: 2px;
+    }
+    .score-card-img {
+      height: 140px;
+    }
+  }
+</style>

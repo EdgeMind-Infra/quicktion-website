@@ -1,12 +1,22 @@
 ---
-// Agent 三兄弟展示：分析 / 策划 / 执行
 import { type Lang, homeStrings } from "../../i18n/home";
+import { withBase } from "../../lib/paths";
+import Icon, { type IconName } from "../icons/Icon.astro";
+import Carousel from "./Carousel.astro";
 
 interface Props {
   lang?: Lang;
 }
 const { lang = "zh" } = Astro.props;
 const t = homeStrings[lang].agents;
+
+// 3 个 agent 的视觉/素材配置。顺序严格对应 i18n items[0..2]（analyst / planner / operator）。
+// 把 badge + tags 的 icon 和截图路径前缀一起固化在这里，i18n 只承担文案。
+const AGENTS: Array<{ key: string; badge: IconName; tags: [IconName, IconName, IconName] }> = [
+  { key: "analyst", badge: "bar-chart-3", tags: ["bar-chart-3", "trending-up", "sparkles"] },
+  { key: "planner", badge: "lightbulb", tags: ["user-search", "mouse-pointer-click", "party-popper"] },
+  { key: "operator", badge: "zap", tags: ["handshake", "pencil-line", "line-chart"] },
+];
 ---
 
 <section class="product-section" id="product">
@@ -15,21 +25,33 @@ const t = homeStrings[lang].agents;
     <p class="sec-sub">{t.sectionSub}</p>
   </div>
   {
-    t.items.map((a, i) => (
-      <div class:list={["agent-row", i % 2 === 1 ? "reverse" : ""]}>
-        <div class="agent-text">
-          <span class="agent-badge">{a.badge}</span>
-          <h3 class="agent-title">{a.title}</h3>
-          <p class="agent-desc">{a.desc}</p>
-          <div class="agent-tags">
-            {a.tags.map((tag) => <span class="agent-tag">{tag}</span>)}
+    t.items.map((a, i) => {
+      const agent = AGENTS[i];
+      const images = [1, 2, 3].map((n) => withBase(`/images/agents/${agent.key}-${n}.png`));
+      return (
+        <div class:list={["agent-row", i % 2 === 1 ? "reverse" : ""]}>
+          <div class="agent-text">
+            <span class="agent-badge">
+              <Icon name={agent.badge} size={16} strokeWidth={2.2} />
+              {a.badge}
+            </span>
+            <h3 class="agent-title">{a.title}</h3>
+            <p class="agent-desc">{a.desc}</p>
+            <div class="agent-tags">
+              {a.tags.map((tag, tagIdx) => (
+                <span class="agent-tag">
+                  <Icon name={agent.tags[tagIdx]} size={15} strokeWidth={1.8} />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div class="agent-ui">
+            <Carousel images={images} alt={a.badge} />
           </div>
         </div>
-        <div class="agent-ui">
-          <div class="agent-ui-placeholder">{t.uiPlaceholder}</div>
-        </div>
-      </div>
-    ))
+      );
+    })
   }
 </section>
 
@@ -45,19 +67,6 @@ const t = homeStrings[lang].agents;
       radial-gradient(ellipse 600px 600px at 85% 10%, rgba(255, 100, 130, 0.06) 0%, transparent 65%),
       radial-gradient(ellipse 800px 500px at 60% 60%, rgba(255, 160, 60, 0.05) 0%, transparent 65%),
       #fff;
-  }
-  .sec-hdr {
-    text-align: center;
-  }
-  .sec-title {
-    font-size: 40px;
-    font-weight: 800;
-    color: #1e293b;
-  }
-  .sec-sub {
-    font-size: 17px;
-    color: #888;
-    margin-top: 12px;
   }
   .agent-row {
     display: flex;
@@ -77,13 +86,16 @@ const t = homeStrings[lang].agents;
   }
   .agent-badge {
     align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-family: "Inter", sans-serif;
     font-size: 14px;
     font-weight: 700;
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 999px;
-    background: rgba(255, 107, 53, 0.1);
-    color: #ff5500;
+    background: rgb(var(--landing-brand-rgb) / 0.1);
+    color: var(--landing-brand-dark);
     letter-spacing: 0.5px;
   }
   .agent-title {
@@ -104,44 +116,49 @@ const t = homeStrings[lang].agents;
     gap: 10px;
   }
   .agent-tag {
-    padding: 6px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
     border-radius: 999px;
     font-size: 13px;
     color: #333;
     border: 1.5px solid #e0e0e0;
     background: #fff;
-    transition: border-color 0.25s, color 0.25s, transform 0.25s,
+    transition:
+      border-color 0.25s,
+      color 0.25s,
+      transform 0.25s,
       box-shadow 0.25s;
+  }
+  .agent-tag :global(.qt-icon) {
+    color: #999;
+    transition: color 0.25s;
   }
   .agent-tag:hover {
     border-color: transparent;
-    color: #ff5500;
+    color: var(--landing-brand-dark);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
     transform: translateY(-1.5px);
   }
+  .agent-tag:hover :global(.qt-icon) {
+    color: #ff6070;
+  }
+
   .agent-ui {
     flex: 1;
     min-width: 0;
-    height: 420px;
+    height: 440px;
     border-radius: 20px;
-    background: #fffbf7;
-    border: 1px solid #ffe0cc;
+    overflow: hidden;
+    border: 1px solid #e8e8e8;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
-  .agent-ui-placeholder {
-    color: #bbb;
-    letter-spacing: 2px;
-  }
+
   @media (max-width: 768px) {
     .product-section {
       padding: 48px 20px;
       gap: 60px;
-    }
-    .sec-title {
-      font-size: 28px;
     }
     .agent-row,
     .agent-row.reverse {

@@ -1,12 +1,20 @@
 ---
-// 功能特色 Tab 切换区块
 import { type Lang, homeStrings } from "../../i18n/home";
+import { withBase } from "../../lib/paths";
 
 interface Props {
   lang?: Lang;
 }
 const { lang = "zh" } = Astro.props;
 const t = homeStrings[lang].featureTabs;
+
+const tabVideos: Record<string, string | null> = {
+  chat: withBase("/videos/chat.mp4"),
+  multi: null, // TODO(feature-tabs): 录制多店铺管理演示后补 public/videos/multi.mp4
+  schedule: withBase("/videos/schedule.mp4"),
+  im: withBase("/videos/im.mp4"),
+  browser: withBase("/videos/browser.mp4"),
+};
 ---
 
 <section class="feature-tabs" id="features">
@@ -29,17 +37,27 @@ const t = homeStrings[lang].featureTabs;
   </div>
   <div class="ft-content">
     {
-      t.features.map((f, i) => (
-        <div class:list={["ft-panel", i === 0 ? "active" : ""]} id={`ftab-${f.key}`}>
-          <div class="ft-left">
-            <h3 class="ft-feature-title">{f.title}</h3>
-            <p class="ft-feature-desc">{f.desc}</p>
+      t.features.map((f, i) => {
+        const video = tabVideos[f.key];
+        return (
+          <div class:list={["ft-panel", i === 0 ? "active" : ""]} id={`ftab-${f.key}`}>
+            <div class="ft-left">
+              <h3 class="ft-feature-title">{f.title}</h3>
+              <p class="ft-feature-desc">{f.desc}</p>
+            </div>
+            <div class:list={["ft-right", video ? "has-video" : ""]}>
+              {video ? (
+                /* preload="none" 避免 4 个视频同时抢带宽；activate() 会切到 metadata 并 play 激活 tab */
+                <video muted loop playsinline preload="none" class="ft-video">
+                  <source src={video} type="video/mp4" />
+                </video>
+              ) : (
+                <div class="ft-placeholder">{f.placeholder}</div>
+              )}
+            </div>
           </div>
-          <div class="ft-right">
-            <div class="ft-placeholder">{f.placeholder}</div>
-          </div>
-        </div>
-      ))
+        );
+      })
     }
   </div>
 </section>
@@ -52,14 +70,6 @@ const t = homeStrings[lang].featureTabs;
     flex-direction: column;
     align-items: center;
     gap: 48px;
-  }
-  .sec-hdr {
-    text-align: center;
-  }
-  .sec-title {
-    font-size: 40px;
-    font-weight: 800;
-    color: #1e293b;
   }
   .ft-tabs {
     display: flex;
@@ -137,13 +147,26 @@ const t = homeStrings[lang].featureTabs;
   }
   .ft-right {
     flex: 1;
-    min-height: 380px;
+    aspect-ratio: 16 / 9;
     border-radius: 16px;
     background: #fffbf7;
     border: 1px solid #ffe0cc;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+  }
+  /* 视频槽位：干净无边框，让视频完全贴合圆角；占位态仍保留主题色边框 */
+  .ft-right.has-video {
+    padding: 0;
+    background: #000;
+    border: none;
+  }
+  .ft-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .ft-placeholder {
     color: #bbb;
@@ -159,10 +182,6 @@ const t = homeStrings[lang].featureTabs;
     .ft-content {
       padding: 0 16px;
     }
-    .sec-title {
-      font-size: 28px;
-    }
-
     /* 横向滚动 tabs：nowrap + overflow-x + 隐藏滚动条 + 右侧渐隐提示溢出 */
     .ft-tabs {
       flex-wrap: nowrap;
@@ -204,52 +223,59 @@ const t = homeStrings[lang].featureTabs;
       font-size: 15px;
       line-height: 1.7;
     }
-    /* mockup 槽位：去掉 380px min-height，改用 16:9 aspect-ratio 自适应 */
+    /* mobile：desktop 的 aspect-ratio 已是 16:9，这里仅收圆角 + 修正 flex 到 full width */
     .ft-right {
       width: 100%;
       flex: initial;
-      min-height: 0;
-      aspect-ratio: 16 / 9;
       border-radius: 12px;
     }
   }
 </style>
 
 <script>
-  const tabs = document.querySelectorAll<HTMLButtonElement>(".ft-tab");
-  const panels = document.querySelectorAll<HTMLDivElement>(".ft-panel");
-
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".ft-tab"));
+  const panels = Array.from(document.querySelectorAll<HTMLDivElement>(".ft-panel"));
+  const videos = panels.map((p) => p.querySelector<HTMLVideoElement>(".ft-video"));
   const tabsContainer = document.querySelector<HTMLElement>(".ft-tabs");
+  const AUTO_MS = 10000;
 
   function scrollActiveTabIntoCenter(idx: number) {
-    // 仅操作 .ft-tabs 容器内部的 scrollLeft，不使用 scrollIntoView
-    // （后者会触发页面级垂直滚动，让轮播把页面拽到 FeatureTabs 区域）
     const tab = tabs[idx];
     if (!tabsContainer || !tab) return;
-    // Desktop 下 tabs 不溢出，无需调整
+    // Desktop 下 tabs 不溢出，无需调整；避免 scrollIntoView 的全页级联滚动
     if (tabsContainer.scrollWidth <= tabsContainer.clientWidth) return;
     const target = tab.offsetLeft - (tabsContainer.clientWidth - tab.offsetWidth) / 2;
     tabsContainer.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
   }
 
   function activate(idx: number) {
+    cur = idx;
     tabs.forEach((t, i) => t.classList.toggle("active", i === idx));
     panels.forEach((p, i) => p.classList.toggle("active", i === idx));
+    // 仅激活 tab 的视频播放；其他全部 pause + 卸载 preload，避免 4 个视频并行解码
+    videos.forEach((v, i) => {
+      if (!v) return;
+      if (i === idx) {
+        v.preload = "auto";
+        void v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
     scrollActiveTabIntoCenter(idx);
   }
 
+  let cur = 0;
+  let timer = window.setInterval(() => activate((cur + 1) % tabs.length), AUTO_MS);
+
   tabs.forEach((btn, i) => {
     btn.addEventListener("click", () => {
-      clearInterval(timer);
+      window.clearInterval(timer);
       activate(i);
-      timer = setInterval(auto, 4000);
+      timer = window.setInterval(() => activate((cur + 1) % tabs.length), AUTO_MS);
     });
   });
 
-  let cur = 0;
-  const auto = () => {
-    cur = (cur + 1) % tabs.length;
-    activate(cur);
-  };
-  let timer = setInterval(auto, 4000);
+  // 初始化：让 active tab 的视频立刻开始播
+  activate(0);
 </script>

@@ -44,6 +44,7 @@
   --landing-brand: #ff6b35;
   --landing-brand-dark: #ff5500;
   --landing-brand-light: #ffe1cc;
+  --landing-brand-pink: #ff4d8a; /* 用于橙→粉渐变的尾色（Hero / SiteNav 按钮） */
   --landing-brand-rgb: 255 107 53;
   --landing-bg: #fff;
   --landing-card: #fff;
@@ -68,4 +69,24 @@
 /* 全局光滑滚动 */
 html {
   scroll-behavior: smooth;
+}
+
+/* 各营销区块共享的标题组：居中、主标 + 可选副标。放 global 层避免多组件复制。 */
+.sec-hdr {
+  text-align: center;
+}
+.sec-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.sec-sub {
+  font-size: 17px;
+  color: #888;
+  margin-top: 12px;
+}
+@media (max-width: 768px) {
+  .sec-title {
+    font-size: 28px;
+  }
 }

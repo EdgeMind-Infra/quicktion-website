@@ -516,3 +516,108 @@ mega menu 的 3 组内容来自 [src/data/help-nav.ts](../../src/data/help-nav.t
 **权衡**：两份数据（sidebar + help-nav.ts）需要在**新增/删除帮助中心页面时同步更新**。抽成真正的 SSOT 需要把 sidebar 也从 help-nav.ts 生成（需要改 `astro.config.mjs` import `.ts` — 在纯 ESM 环境下可行但要小心 Astro 启动链）。当前条目数 ~14 手动同步成本低，未来条目膨胀再优化。
 
 **相关文件**：[src/data/help-nav.ts](../../src/data/help-nav.ts)、[astro.config.mjs](../../astro.config.mjs)
+
+## 素材托管：public/ 还是 OSS？
+
+首页有两类大文件：
+
+| 类型 | 体积 | 方案 |
+|---|---|---|
+| Hero 主视频（营销流程.mp4） | 2.2 MB | **阿里云 OSS**（`edgemind-oss.oss-cn-hangzhou.aliyuncs.com`），客户侧已有 bucket |
+| FeatureTabs 4 个 feature 视频 | ~1-2 MB/个 | **`public/videos/*.mp4`** |
+| Score Section 4 张产品截图 | ~135 KB/张 | **`public/images/score/*.png`** |
+| AgentShowcase 9 张轮播图 | ~115-170 KB/张 | **`public/images/agents/*.png`** |
+
+**判断依据**：
+- 单文件 > 1 MB 且客户自己有 CDN/OSS → 走 OSS，组件里写绝对 URL
+- 单文件 < 500 KB 或客户无 CDN → 放 `public/`，通过 `withBase()` 拼相对路径
+- Hero 视频虽然也是 2 MB，但它是首屏首要资源，走 OSS 能用 CDN 加速 + 不让 GitHub Pages 仓库膨胀
+
+GitHub Pages 单仓库文件大小限制 100 MB，总大小 1 GB 软限制——本项目目前 `public/` 视频 + 图片 ~8.5 MB，可控。如果未来再加 10 个视频就要重新考虑迁 OSS。
+
+### 中文文件名统一改英文
+
+素材原文件（`对话即触发.mp4` / `图片1.png` / `搭门店.png` ...）在进入 `public/` 时**必须重命名为英文**：
+
+```
+对话即触发.mp4  → public/videos/chat.mp4
+定时任务.mp4    → public/videos/schedule.mp4
+连接微信.mp4    → public/videos/im.mp4
+浏览器打开.mp4  → public/videos/browser.mp4
+
+搭门店.png → public/images/score/store.png
+做货架.png → public/images/score/goods.png
+扩流量.png → public/images/score/traffic.png
+拿收益.png → public/images/score/revenue.png
+
+图片1-3.png → public/images/agents/analyst-{1,2,3}.png
+图片4-6.png → public/images/agents/planner-{1,2,3}.png
+图片7-9.png → public/images/agents/operator-{1,2,3}.png
+```
+
+**为什么**：
+1. 避免 URL encoding 踩坑（中文在 `withBase()` 拼接后浏览器要 `%E6%90%AD%E9%97%A8%E5%BA%97` 编码，出 bug 时调试麻烦）
+2. 语义清晰——文件名直接告诉你它是哪个 agent 或哪个 feature，和 i18n key 一一对应
+3. 搜索可靠——grep 英文稳定，grep 中文受终端编码影响
+
+**相关文件**：[public/videos/](../../public/videos/)、[public/images/](../../public/images/)
+
+## 通用 Carousel 子组件
+
+### 为什么抽组件
+
+首页 3 处会有图片轮播需求：AgentShowcase 的 3 个 agent row 都是同样的"3 张截图 + prev/next + dots + 自动切换"模式。原本每个 row 内联一份 CSS + markup + JS，3 份代码完全重复——改一处要改 3 处。
+
+抽出 [src/components/home/Carousel.astro](../../src/components/home/Carousel.astro)，父组件只传 `images` 数组：
+
+```astro
+<Carousel images={[src1, src2, src3]} alt="分析 Agent" />
+```
+
+### 数据驱动设计
+
+Carousel 组件不假设图片张数——父传几张就渲几张。JS 通过 `data-slides` 属性读取张数：
+
+```astro
+<div class="qt-carousel" data-slides={images.length} data-interval={interval}>
+```
+
+```ts
+const total = Number(carousel.dataset.slides ?? "1");
+const interval = Number(carousel.dataset.interval ?? "4000");
+if (total < 2) return;  // 单图不挂 JS，不显示 btn/dots
+```
+
+`data-interval="0"` 可关闭自动切换（手动场景用）。
+
+**不要**把轮播的 `cur` 状态放在 DOM class 切换里——track 的 translateX 直接从 `cur * 100%` 计算出来更直观。dots active 状态用 `classList.toggle` 同步。
+
+### 过渡期抓包看起来像 bug，实际不是
+
+`.carousel-track` 上 `transition: transform 0.5s ease`——自动切换时截图有 500ms 窗口会抓到 "两张图并排" 的瞬间（track 正在 translateX 过渡）。首次排查以为是 `flex: 0 0 100%` 没生效，但用 `getBoundingClientRect` 测 slide width = 容器 width 是对的，只是过渡动画未结束。
+
+**验证方法**：`getComputedStyle(track).transform` 如果是 `matrix(1, 0, 0, 1, 0, 0)` 说明在稳定态，不是 `matrix(..., -450, 0)` 这种中间值。
+
+**相关文件**：[src/components/home/Carousel.astro](../../src/components/home/Carousel.astro)、[src/components/home/AgentShowcase.astro](../../src/components/home/AgentShowcase.astro)
+
+## Astro dev server：scoped CSS 大改后需重启
+
+改 `.astro` 组件的 `<style>` 里涉及**结构性变化**（新增/删除选择器、大改 flex/grid 骨架）时，Astro Vite 的 HMR 有时不能可靠把旧的 scoped class (`astro-xxxxx` 后缀) 替换成新的——浏览器上看到的是混合状态：HTML 用新的 markup，CSS 还是旧 rule。
+
+**现象**：浏览器 DevTools 里 computed style 能看到旧版 CSS 规则（比如 `height: 420px`），但磁盘上文件已经是新值（`height: 440px`）。
+
+**判断方法**：对比 dev server A（刚启）和 dev server B（早启且经历了大改）在同一文件、同一选择器上的 computed style。A 是最新的，B 保留旧值 → 就是 HMR 卡住。
+
+**修复**：`Ctrl+C` 停掉 dev server，重新 `pnpm dev`。完全刷新。
+
+这不是 bug 是 Astro HMR 的已知权衡——scoped 组件 CSS 做 AST 级 diff 太贵，某些情况下保留旧 rule 更快。大改时直接重启，省得排查 20 分钟。
+
+## 外链常量集中：src/lib/links.ts
+
+"登录""免费体验""立即体验巨象"CTA 在 SiteNav / Hero / CTA / MobileDrawer 4 处出现，全部跳同一个 Agent 控制台 URL。写 4 次字符串容易漏改（换域名时）。
+
+修：[src/lib/links.ts](../../src/lib/links.ts) 导出 `AGENT_CONSOLE_URL`，4 处都从这里 import。未来换域名只改一行。
+
+`withBase` 属于站内 URL 拼接工具，`links.ts` 专管外部品牌域。两者不要混——`withBase(AGENT_CONSOLE_URL)` 会错误加 `/quicktion-website` 前缀。
+
+**相关文件**：[src/lib/links.ts](../../src/lib/links.ts)

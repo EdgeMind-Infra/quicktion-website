@@ -8,7 +8,9 @@
  * "帮助中心"按钮 hover 触发 mega menu 大下拉（3 列），内容来自 src/data/help-nav.ts。
  */
 import { helpNavGroups } from "../../data/help-nav";
+import { AGENT_CONSOLE_URL } from "../../lib/links";
 import { withBase } from "../../lib/paths";
+import Icon from "../icons/Icon.astro";
 import MobileDrawer from "./MobileDrawer.astro";
 
 interface Props {
@@ -20,7 +22,6 @@ interface Props {
 const { variant, lang = "zh" } = Astro.props;
 
 const homeHref = withBase(lang === "zh" ? "/" : "/en/");
-const pricingHref = withBase(lang === "zh" ? "/pricing/" : "/en/pricing/");
 const docsHref = withBase(
   lang === "zh" ? "/help/quick-start/what-is/" : "/en/help/quick-start/what-is/",
 );
@@ -44,10 +45,8 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     </a>
 
     <div class="nav-links">
-      <a href={pricingHref} class="nav-link">{lang === "zh" ? "定价" : "Pricing"}</a>
-
       {
-        /* docs 上下文下隐藏「文档」下拉——用户已在文档里，再给文档入口是冗余 */
+        /* docs 上下文下隐藏「帮助中心」下拉——用户已在文档里，再给入口是冗余 */
         variant === "marketing" && (
           <div class="nav-dropdown" data-dropdown="help">
             <button
@@ -57,7 +56,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
               aria-haspopup="true"
               aria-controls="help-mega"
             >
-              {lang === "zh" ? "文档" : "Docs"}
+              {lang === "zh" ? "帮助中心" : "Help Center"}
               <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -111,13 +110,12 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span>{otherLangLabel}</span>
           </a>
-          <button class="btn-login" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <a class="btn-login" href={AGENT_CONSOLE_URL}>
+            <Icon name="sparkles" size={14} strokeWidth={2.2} />
             <span>{lang === "zh" ? "登录" : "Sign in"}</span>
-          </button>
+          </a>
           <MobileDrawer
             lang={lang}
-            pricingHref={pricingHref}
             docsHref={docsHref}
             otherLangHref={otherLangHref}
             otherLangLabel={otherLangLabel}
@@ -375,9 +373,14 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     color: #fff;
     border: none;
     cursor: pointer;
-    background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
+    background: linear-gradient(
+      135deg,
+      var(--landing-brand-dark) 0%,
+      var(--landing-brand) 40%,
+      var(--landing-brand-pink) 100%
+    );
     box-shadow:
-      0 4px 14px rgba(255, 107, 53, 0.38),
+      0 4px 14px rgb(var(--landing-brand-rgb) / 0.38),
       0 1px 0 rgba(255, 255, 255, 0.2) inset;
     transition:
       transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),

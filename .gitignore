@@ -26,3 +26,7 @@ pnpm-debug.log*
 .claude/skills/*
 !.claude/skills/dev-workflow/
 .playwright*
+
+# temp browser screenshots from playwright-cli
+/qtn-*.png
+/accio-*.png

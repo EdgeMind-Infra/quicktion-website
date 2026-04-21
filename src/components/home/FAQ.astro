@@ -1,0 +1,203 @@
+---
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].faq;
+---
+
+<section class="faq-section" id="faq">
+  <h2 class="faq-title">{t.sectionTitle}</h2>
+
+  <div class="faq-list" role="list">
+    {
+      t.items.map((item, i) => {
+        const panelId = `faq-panel-${i}`;
+        const isOpen = i === 0;
+        return (
+          <div class="faq-item" data-open={String(isOpen)} role="listitem">
+            <button
+              class="faq-q"
+              type="button"
+              aria-expanded={String(isOpen)}
+              aria-controls={panelId}
+            >
+              <span class="faq-q-text">{item.q}</span>
+              <svg
+                class="faq-chevron"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <div class="faq-a-wrap" id={panelId} role="region">
+              <p class="faq-a">{item.a}</p>
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</section>
+
+<style>
+  .faq-section {
+    padding: 100px 24px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+  }
+  .faq-title {
+    font-size: 40px;
+    font-weight: 800;
+    color: #1a1a1a;
+    text-align: center;
+    letter-spacing: -0.5px;
+  }
+  .faq-list {
+    width: 100%;
+    max-width: 840px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 卡片空闲态 / 展开态 —— 用品牌橙极淡 tint 代替 Accio 原版的蓝灰 */
+  .faq-item {
+    border-radius: 14px;
+    border: 1px solid var(--landing-border, #eae3db);
+    background: #fff;
+    transition:
+      background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+  .faq-item[data-open="true"] {
+    background: rgb(var(--landing-brand-rgb) / 0.06);
+    border-color: transparent;
+  }
+  .faq-item:hover:not([data-open="true"]) {
+    border-color: #d8d3cc;
+  }
+
+  /* 显式重置 <button> 默认样式；不用 `all: unset`（它会把 display 重置为 inline，
+     与后续 display: flex 在部分浏览器 / scoped CSS 下特异性博弈失败） */
+  .faq-q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 22px 28px;
+    background: none;
+    border: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  .faq-q:focus-visible {
+    outline: 2px solid var(--landing-brand);
+    outline-offset: -2px;
+  }
+  .faq-q-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.45;
+    flex: 1;
+    text-align: left;
+  }
+  .faq-chevron {
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .faq-item[data-open="true"] .faq-chevron {
+    transform: rotate(180deg);
+    color: var(--landing-brand);
+  }
+
+  /* 高度过渡：grid-template-rows 0fr ↔ 1fr 是目前最平滑的"auto height"过渡方案。
+     不用 max-height（需猜测值）；不用 JS 手动读 scrollHeight。 */
+  .faq-a-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .faq-item[data-open="true"] .faq-a-wrap {
+    grid-template-rows: 1fr;
+  }
+  .faq-a {
+    /* grid child 默认 min-height: auto，会让 0fr 也保留最小高度；必须 0 才能真正收起 */
+    min-height: 0;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #4b5563;
+    padding: 0 28px;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .faq-item[data-open="true"] .faq-a {
+    padding: 4px 28px 24px;
+  }
+
+  @media (max-width: 768px) {
+    .faq-section {
+      padding: 64px 16px;
+      gap: 32px;
+    }
+    .faq-title {
+      font-size: 28px;
+    }
+    .faq-q {
+      padding: 18px 20px;
+    }
+    .faq-q-text {
+      font-size: 15px;
+    }
+    .faq-a {
+      padding: 0 20px;
+      font-size: 14px;
+    }
+    .faq-item[data-open="true"] .faq-a {
+      padding: 2px 20px 20px;
+    }
+  }
+</style>
+
+<script>
+  // 单选 accordion：点击 item 会先收起所有，再展开点击项；再次点击已展开项则收起（全关态）
+  const items = Array.from(document.querySelectorAll<HTMLElement>(".faq-item"));
+
+  items.forEach((item) => {
+    const trigger = item.querySelector<HTMLButtonElement>(".faq-q");
+    trigger?.addEventListener("click", () => {
+      const isOpen = item.dataset.open === "true";
+      for (const other of items) {
+        other.dataset.open = "false";
+        other.querySelector(".faq-q")?.setAttribute("aria-expanded", "false");
+      }
+      if (!isOpen) {
+        item.dataset.open = "true";
+        trigger.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+</script>

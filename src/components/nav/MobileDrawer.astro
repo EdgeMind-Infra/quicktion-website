@@ -11,16 +11,16 @@
  * z-index：汉堡在 nav 里 (z:100)；打开时 backdrop (z:290) + drawer (z:300) 盖住 sticky nav。
  */
 import { type Lang, homeStrings } from "../../i18n/home";
+import { AGENT_CONSOLE_URL } from "../../lib/links";
 
 interface Props {
   lang: Lang;
-  pricingHref: string;
   docsHref: string;
   otherLangHref: string;
   otherLangLabel: string;
 }
 
-const { lang, pricingHref, docsHref, otherLangHref, otherLangLabel } = Astro.props;
+const { lang, docsHref, otherLangHref, otherLangLabel } = Astro.props;
 const t = homeStrings[lang].nav;
 const brand = lang === "zh" ? "巨象" : "Quicktion";
 ---
@@ -96,7 +96,6 @@ const brand = lang === "zh" ? "巨象" : "Quicktion";
   </div>
 
   <nav class="drawer-nav">
-    <a href={pricingHref} class="drawer-link">{t.pricing}</a>
     <a href={docsHref} class="drawer-link">{t.docs}</a>
     <a href={otherLangHref} class="drawer-link drawer-lang">
       <svg
@@ -119,7 +118,7 @@ const brand = lang === "zh" ? "巨象" : "Quicktion";
   </nav>
 
   <div class="drawer-footer">
-    <button type="button" class="drawer-cta">{t.signIn}</button>
+    <a href={AGENT_CONSOLE_URL} class="drawer-cta">{t.signIn}</a>
   </div>
 </aside>
 
@@ -264,6 +263,9 @@ const brand = lang === "zh" ? "巨象" : "Quicktion";
     flex-shrink: 0;
   }
   .drawer-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     padding: 14px 20px;
     border-radius: 999px;
@@ -272,9 +274,15 @@ const brand = lang === "zh" ? "巨象" : "Quicktion";
     color: #fff;
     font-size: 15px;
     font-weight: 600;
-    background: linear-gradient(135deg, #ff5500 0%, #ff6b35 40%, #ff4d8a 100%);
-    box-shadow: 0 6px 18px rgba(255, 107, 53, 0.38);
+    background: linear-gradient(
+      135deg,
+      var(--landing-brand-dark) 0%,
+      var(--landing-brand) 40%,
+      var(--landing-brand-pink) 100%
+    );
+    box-shadow: 0 6px 18px rgb(var(--landing-brand-rgb) / 0.38);
     font-family: inherit;
+    text-decoration: none;
     transition:
       transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);

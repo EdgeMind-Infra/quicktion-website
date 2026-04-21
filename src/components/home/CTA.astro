@@ -1,6 +1,7 @@
 ---
-// 落地 CTA 区块
+import Icon from "../icons/Icon.astro";
 import { type Lang, homeStrings } from "../../i18n/home";
+import { AGENT_CONSOLE_URL } from "../../lib/links";
 
 interface Props {
   lang?: Lang;
@@ -13,7 +14,10 @@ const t = homeStrings[lang].cta;
   <h2 class="cta-title">{t.title}</h2>
   <p class="cta-sub">{t.sub}</p>
   <div class="cta-btns">
-    <button class="cta-btn-primary" type="button">{t.button}</button>
+    <a class="cta-btn-primary" href={AGENT_CONSOLE_URL}>
+      <Icon name="rocket" size={18} strokeWidth={2.2} />
+      <span>{t.button}</span>
+    </a>
   </div>
 </section>
 
@@ -42,19 +46,24 @@ const t = homeStrings[lang].cta;
     margin-top: 16px;
   }
   .cta-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 14px 48px;
     border-radius: 999px;
     border: none;
     cursor: pointer;
-    background: #ff6b35;
+    background: var(--landing-brand);
     color: #fff;
     font-size: 17px;
     font-weight: 700;
-    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
-    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 6px 20px rgb(var(--landing-brand-rgb) / 0.35);
+    transition:
+      background 0.2s,
+      transform 0.2s;
   }
   .cta-btn-primary:hover {
-    background: #ff5500;
+    background: var(--landing-brand-dark);
     transform: translateY(-1px);
   }
   @media (max-width: 768px) {
