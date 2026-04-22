@@ -131,7 +131,10 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
 </nav>
 
 <style>
-  /* 外壳：全宽、sticky、毛玻璃背景。内部 wrapper 做 container 居中。 */
+  /* 外壳：全宽、sticky、毛玻璃背景 + 水平 padding。内部 wrapper 纯做 container 居中。
+     padding 放在外壳上（而不是 .site-nav-inner），让 .site-nav-inner 的 max-width 几何
+     和 .hero-inner / .footer-inner / .mega-inner 一致——内容 x 起点 = (viewport − 1200) / 2，
+     nav 的 logo 才能和下方 Hero 视频、Footer 品牌名在同一条竖线上。 */
   .site-nav {
     height: var(--landing-header-height, 4rem);
     background: rgba(255, 255, 255, 0.82);
@@ -141,6 +144,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     position: sticky;
     top: 0;
     z-index: 100;
+    padding: 0 var(--landing-container-px, 40px);
     font-family: "Inter", "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
   }
   .site-nav-inner {
@@ -151,13 +155,14 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     height: 100%;
     max-width: var(--landing-container, 1200px);
     margin: 0 auto;
-    padding: 0 var(--landing-container-px, 40px);
   }
   /* docs 场景下 Starlight sidebar 从屏幕左边缘 0 开始，nav 居中到 container 会让 logo
      悬空在 sidebar 上方。让 docs 下 nav 全宽，padding 对齐 Starlight 默认 --sl-nav-pad-x。 */
+  .site-nav[data-variant="docs"] {
+    padding: 0 var(--sl-nav-pad-x, 1.5rem);
+  }
   .site-nav[data-variant="docs"] .site-nav-inner {
     max-width: none;
-    padding: 0 var(--sl-nav-pad-x, 1.5rem);
   }
 
   .nav-left {
@@ -241,7 +246,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
     background: #fff;
     border-bottom: 0.8px solid var(--landing-border, #eae3db);
     box-shadow: 0 20px 48px -20px rgba(15, 23, 42, 0.25);
-    padding: 40px 40px 44px;
+    padding: 40px 0 44px;
     opacity: 0;
     pointer-events: none;
     transform: translateY(-8px);
@@ -387,8 +392,10 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
   }
 
   @media (max-width: 768px) {
-    .site-nav-inner {
+    .site-nav {
       padding: 0 16px;
+    }
+    .site-nav-inner {
       gap: 8px;
     }
     .nav-left {
@@ -415,7 +422,7 @@ const totalCols = groupCols.reduce((a, b) => a + b, 0);
       flex-shrink: 0;
     }
     /* docs 场景：给 Starlight 的 fixed 汉堡按钮留空间（右侧 pad 相当于 menu-button-size + 安全边距） */
-    .site-nav[data-variant="docs"] .site-nav-inner {
+    .site-nav[data-variant="docs"] {
       padding-inline-end: calc(var(--sl-menu-button-size, 2.5rem) + 1.5rem);
     }
   }

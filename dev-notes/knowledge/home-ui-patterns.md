@@ -23,13 +23,13 @@
 
 Accio 用 1400px 作为 container，主流 SaaS 多数在 1200–1280 之间。1200 在 1440 viewport 下留 120px 两侧空白，视觉舒适。
 
-### SiteNav 必须"外壳全宽 + 内部 wrapper 居中"
+### SiteNav 必须"外壳全宽 + 内部 wrapper 居中"，水平 padding 一律放外壳
 
 Header 不能直接 `.site-nav { max-width: 1200 }`——那样 sticky 背景、border、毛玻璃都只覆盖中间 1200px，两侧穿帮。正确结构：
 
 ```astro
-<nav class="site-nav">              <!-- 外壳：full-width、sticky、毛玻璃 -->
-  <div class="site-nav-inner">      <!-- 内部：max-width 居中、padding -->
+<nav class="site-nav">              <!-- 外壳：full-width、sticky、毛玻璃 + 水平 padding -->
+  <div class="site-nav-inner">      <!-- 内部：max-width + margin auto，不再加 padding -->
     ...
   </div>
 </nav>
@@ -41,27 +41,46 @@ Header 不能直接 `.site-nav { max-width: 1200 }`——那样 sticky 背景、
   position: sticky; top: 0;
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(16px);
+  padding: 0 var(--landing-container-px);
   ...
 }
 .site-nav-inner {
   max-width: var(--landing-container);
   margin: 0 auto;
-  padding: 0 var(--landing-container-px);
   display: flex;
-  /* ...所有布局 */
+  /* 注意：不写 padding，否则 content 会比同是 1200 容器的 .hero-inner / .footer-inner / .mega-inner 偏右 40px */
 }
 ```
+
+### 必须和其它 section 用一致的"outer padding + inner bare max-width"模式
+
+本项目 **所有** 1200px 容器（`.hero-inner`、`.footer-inner`、`.ft-content`、`.mega-inner`、`.agent-row`、`.score-section` 等）的模式都是：
+
+```css
+.section-outer { padding: X 40; }      /* 某些用 24px，某些用 40px，但都在外层 */
+.section-inner { max-width: 1200; margin: 0 auto; /* 无水平 padding */ }
+```
+
+大屏（w ≥ 1280）下这种模式的内容 x 起点 = `(w − 1200) / 2`。
+
+**错误的反例**（曾经的 SiteNav）：把 padding 放在 inner 上 —— `.site-nav-inner { max-width: 1200; padding: 0 40; margin: 0 auto }`。这让 nav 内容 x 起点 = `(w − 1200) / 2 + 40`，比下方 Hero 视频 / Footer 品牌 / mega menu 的列标题整体**偏右 40px**，视觉上 logo 不在同一条竖线上。
+
+**判断方法**：取任意两个 section 的内部元素 `getBoundingClientRect().left`，在 w ≥ 1280 时应该完全相等。
+
+mega menu 也遵循同样规则：`.mega-menu` 外壳只管全宽背景和垂直 padding（`padding: 40px 0 44px`），内部 `.mega-inner` 只写 `max-width: 1200; margin: 0 auto`，不加水平 padding。
 
 ### docs variant 要特例：nav 全宽对齐 sidebar
 
 Starlight 文档页的左侧 sidebar 从屏幕 `left: 0` 开始；如果 docs 下 nav 也用 1200 container 居中，logo 会悬空在 sidebar 的右侧、看起来脱离主视觉。
 
-docs variant 下让 `.site-nav-inner` 全宽、padding 对齐 Starlight 自己的 `--sl-nav-pad-x`：
+docs variant 下让 `.site-nav` 外壳的 padding 对齐 Starlight 自己的 `--sl-nav-pad-x`，并让 inner 取消 max-width 限制：
 
 ```css
+.site-nav[data-variant="docs"] {
+  padding: 0 var(--sl-nav-pad-x, 1.5rem);
+}
 .site-nav[data-variant="docs"] .site-nav-inner {
   max-width: none;
-  padding: 0 var(--sl-nav-pad-x, 1.5rem);
 }
 ```
 
