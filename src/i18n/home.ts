@@ -30,6 +30,9 @@ export interface HomeStrings {
     desc: string;
     ctaPrimary: string;
     ctaSecondary: string;
+    /** aria-label：视频静音切换，状态在两者之间切 */
+    unmuteLabel: string;
+    muteLabel: string;
   };
   score: {
     sectionTitleLeading: string;
@@ -95,6 +98,8 @@ const zh: HomeStrings = {
     desc: "你只需轻松发令，店铺诊断、达人对接、竞品分析——所有工作都在对话中完成。",
     ctaPrimary: "免费体验",
     ctaSecondary: "观看演示",
+    unmuteLabel: "开启声音",
+    muteLabel: "关闭声音",
   },
   score: {
     sectionTitleLeading: "帮你",
@@ -247,6 +252,8 @@ const en: HomeStrings = {
     desc: "Just give a command — store diagnostics, creator outreach, competitive analysis. Everything happens inside one conversation.",
     ctaPrimary: "Try it free",
     ctaSecondary: "Watch demo",
+    unmuteLabel: "Unmute",
+    muteLabel: "Mute",
   },
   score: {
     sectionTitleLeading: "Lift your ",

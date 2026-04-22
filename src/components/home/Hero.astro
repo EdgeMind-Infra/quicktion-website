@@ -47,6 +47,18 @@ const HERO_VIDEO_SRC =
       <video class="video-media" autoplay muted loop playsinline preload="metadata">
         <source src={HERO_VIDEO_SRC} type="video/mp4" />
       </video>
+      <button
+        type="button"
+        class="video-sound"
+        id="heroSound"
+        data-muted="true"
+        aria-label={t.unmuteLabel}
+        data-label-mute={t.muteLabel}
+        data-label-unmute={t.unmuteLabel}
+      >
+        <Icon name="volume-x" size={18} class="sound-icon sound-icon-off" />
+        <Icon name="volume-2" size={18} class="sound-icon sound-icon-on" />
+      </button>
     </div>
   </div>
 </section>
@@ -176,6 +188,7 @@ const HERO_VIDEO_SRC =
 
   /* macOS 风窗口：白色顶部栏（含红/黄/绿 traffic-light）+ 下方视频，无 1px 边框 */
   .hero-video {
+    position: relative; /* 给右下角 .video-sound 做定位锚点 */
     width: 100%;
     max-width: 1200px;
     margin-top: 36px;
@@ -214,6 +227,47 @@ const HERO_VIDEO_SRC =
     aspect-ratio: 16 / 9;
     object-fit: cover;
     display: block;
+  }
+
+  /* 静音切换按钮：右下角胶囊，默认半透明，hover / 交互后加深。
+     浏览器 autoplay 策略要求视频静音才能自动播，用户点击即可解除。 */
+  .video-sound {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(15, 23, 42, 0.55);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition:
+      background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .video-sound:hover {
+    background: rgba(15, 23, 42, 0.75);
+    transform: translateY(-1px);
+  }
+  .video-sound:focus-visible {
+    outline: 2px solid var(--landing-brand);
+    outline-offset: 2px;
+  }
+  /* 用 data-muted 驱动两个图标的显隐：mute 态显示 volume-x，unmute 显示 volume-2 */
+  .video-sound :global(.sound-icon-on) {
+    display: none;
+  }
+  .video-sound[data-muted="false"] :global(.sound-icon-off) {
+    display: none;
+  }
+  .video-sound[data-muted="false"] :global(.sound-icon-on) {
+    display: inline-block;
   }
 
   @media (max-width: 768px) {
@@ -267,5 +321,20 @@ const HERO_VIDEO_SRC =
   const heroVideo = document.getElementById("heroVideo");
   btnDemo?.addEventListener("click", () => {
     heroVideo?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  const soundBtn = document.getElementById("heroSound");
+  const videoEl = heroVideo?.querySelector<HTMLVideoElement>(".video-media");
+  soundBtn?.addEventListener("click", () => {
+    if (!videoEl) return;
+    const nextMuted = !videoEl.muted;
+    videoEl.muted = nextMuted;
+    soundBtn.dataset.muted = String(nextMuted);
+    const label = nextMuted
+      ? soundBtn.dataset.labelUnmute
+      : soundBtn.dataset.labelMute;
+    if (label) soundBtn.setAttribute("aria-label", label);
+    // 解除静音时若视频正好暂停（iOS 低电量模式会这样），主动 play 一次
+    if (!nextMuted && videoEl.paused) void videoEl.play().catch(() => {});
   });
 </script>
