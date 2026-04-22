@@ -53,10 +53,20 @@ const tabImages: Record<string, string | null> = {
             </div>
             <div class:list={["ft-right", video && "has-video", image && "has-image"]}>
               {video ? (
-                /* preload="none" 避免 4 个视频同时抢带宽；activate() 会切到 metadata 并 play 激活 tab */
-                <video muted loop playsinline preload="none" class="ft-video">
-                  <source src={video} type="video/mp4" />
-                </video>
+                <>
+                  {/* preload="none" 避免 4 个视频同时抢带宽；activate() 会切到 metadata 并 play 激活 tab */}
+                  <video muted loop playsinline preload="none" class="ft-video">
+                    <source src={video} type="video/mp4" />
+                  </video>
+                  {/* 透明点击层：真 <button> 确保键盘可达和语义正确 */}
+                  <button
+                    type="button"
+                    class="ft-clicker"
+                    data-video-lightbox
+                    data-video-src={video}
+                    aria-label={f.title}
+                  />
+                </>
               ) : image ? (
                 <img src={image} alt={f.title} class="ft-image" loading="lazy" />
               ) : (
@@ -154,6 +164,7 @@ const tabImages: Record<string, string | null> = {
     line-height: 1.8;
   }
   .ft-right {
+    position: relative; /* 为 .ft-clicker 提供定位锚点 */
     flex: 1;
     aspect-ratio: 16 / 9;
     border-radius: 16px;
@@ -164,26 +175,35 @@ const tabImages: Record<string, string | null> = {
     justify-content: center;
     overflow: hidden;
   }
+  /* 透明点击层，覆盖整个 .ft-right。由 VideoLightbox 的全局委托处理点击。 */
+  .ft-clicker {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+  .ft-clicker:focus-visible {
+    outline: 2px solid var(--landing-brand);
+    outline-offset: -4px;
+    border-radius: 12px;
+  }
   /* 视频槽位：干净无边框，让视频完全贴合圆角；占位态仍保留主题色边框 */
   .ft-right.has-video {
     padding: 0;
     background: #000;
     border: none;
   }
-  /* 图片槽位：保留淡橙主题底色作为 contain 时的留边，和外框呼应 */
+  /* 图片槽位：和视频一样铺满容器、无边框留白。原图比例和 16:9 不匹配时会裁切。 */
   .ft-right.has-image {
     padding: 0;
+    border: none;
   }
-  .ft-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  .ft-video,
   .ft-image {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
   }
   .ft-placeholder {

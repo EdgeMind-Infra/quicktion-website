@@ -185,6 +185,59 @@ https://work-download.accio.com/videos/home.mp4
 
 替换策略：录一段 Quicktion 自己的 30s demo → 压成 h264 mp4 + vp9 webm → 放 `public/videos/hero.mp4`。
 
+### 视频 lightbox：单例 + 行为注入式（`VideoLightbox` 组件）
+
+首页视频分散在 Hero（1 个）+ FeatureTabs（4 个），都需要"点击后原地 FLIP 放大到屏幕中心 + 带原生 controls（进度条 / 音量 / 全屏）"的观看体验。
+
+抽 [src/components/media/VideoLightbox.astro](../../src/components/media/VideoLightbox.astro) 为**单例共享实例**，而非 per-video props：
+
+```astro
+<!-- MarketingLayout 挂一次 -->
+<VideoLightbox lang={navLang} />
+
+<!-- 任意元素加属性即成触发器；文档级事件委托捕获 -->
+<button data-video-lightbox data-video-src={src} aria-label={label}>...</button>
+```
+
+**为什么选 data-attribute 委托而非 props 实例化**：5+ 个视频若各自 `<VideoLightbox src={...}>` 会产生 5 份 backdrop/stage DOM，且同一时刻只能打开一个 —— 单例天然契合模态语义。新增视频时只需给元素加属性，零 import、零布局改动。
+
+**FLIP 技术选型**：Web Animations API + `left/top/width/height/borderRadius` 关键帧。不用 `transform: scale`——scale 会让内容"从缩小态放大"（海报感），而原地扩张的"卡片长大"视觉需要真实的 box 尺寸插值。单次 320ms + 小矩形，逐帧 layout 不是性能问题。
+
+**原地扩张 → 稳定态的交接**：动画以 `fill: "forwards"` 持续施加最后一帧的 px 值，阻止后续 CSS `left: 50%; transform: translate(-50%, -50%)` 的稳定态规则生效。`onfinish` 里必须：
+
+```ts
+setState("open");           // 先切 data-state，CSS 稳定态规则激活
+stage.removeAttribute("style"); // 清 first 帧 inline
+animation.cancel();         // ★ 释放 fill:forwards 的末帧值，CSS 才真正接管
+```
+
+关键是最后一步 `animation.cancel()`——漏掉它，stage 会卡在动画末帧绝对坐标，浏览器 resize 时不会重排（验证方法：打开 lightbox 后拖动浏览器大小，看 stage 是否跟着居中）。
+
+稳定态尺寸写 CSS：`width: min(1200px, 92vw, calc(85vh * 16 / 9))` —— 三重 min 兼顾"宽度占比 / 硬顶 1200 / 高度约束反推的宽度（防 aspect-ratio 被 max-height 拉扁）"。JS 的 `computeFinalRect()` 必须用和 CSS 等价的算式，否则 FLIP 到达末帧后切 CSS 会有跳变。
+
+### `:global()` 触发器样式：必须用 `:where()` 降特异性
+
+VideoLightbox 的全局规则：
+
+```css
+:global(:where([data-video-lightbox])) {
+  cursor: pointer;
+  position: relative;  /* 给 ::after overlay 做 containing block 兜底 */
+}
+```
+
+不加 `:where()` 的话，该规则特异性 (0,1,0) 等于消费者 `.ft-clicker { position: absolute }` / `.video-clicker { position: absolute }` 的特异性——跨组件 CSS 加载顺序决定胜负（通常后定义的赢，即 VideoLightbox 反而覆盖了 .video-clicker 的 `absolute`），导致 clicker 变成 `position: relative` → 块级流动 → 高度塌到 0px → 点击范围为零点。
+
+`:where()` 把特异性压到 (0,0,0)，消费者任何显式 `position:` 都能稳赢。全局只作兜底；这是"全局行为注入"的通用守则。
+
+**验证**：`getComputedStyle(clicker).position === "absolute"` 和 `height !== "0px"`。
+
+**Hero 的 nested button 问题**：`.hero-video` 已内含 `.video-sound` 按钮（unmute 切换），不能把 `.hero-video` 本身做 `role="button"` / 加 `data-video-lightbox`——会产生嵌套 interactive 违反 a11y。解法：在 `.hero-video` 内部放一个**独立的、和 `.video-sound` 同级的透明 `<button class="video-clicker">`**，DOM 顺序先于声控按钮，自然低 z-index 不吞声控点击；定位 `top: 44px` 刚好避开 titlebar。FeatureTabs 的 `.ft-right` 不含其他 interactive，同样用 `.ft-clicker` 绝对覆盖保持一致。
+
+声控按钮还需 `e.stopPropagation()`，否则 click 冒泡到 `.hero-video` 的事件委托区域（虽然 clicker 是兄弟不是父级，但 `closest("[data-video-lightbox]")` 仍会在 document 事件路径上匹配到同级别 Hero 区域的其他 trigger）。
+
+**相关文件**：[src/components/media/VideoLightbox.astro](../../src/components/media/VideoLightbox.astro)、[src/components/home/Hero.astro](../../src/components/home/Hero.astro)、[src/components/home/FeatureTabs.astro](../../src/components/home/FeatureTabs.astro)、[src/layouts/MarketingLayout.astro](../../src/layouts/MarketingLayout.astro)
+
 ### 16:9 响应式视频卡
 
 用 `aspect-ratio: 16 / 9` 而非固定高度：

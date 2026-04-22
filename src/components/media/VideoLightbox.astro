@@ -1,0 +1,417 @@
+---
+/**
+ * VideoLightbox —— 全站共享的视频灯箱。
+ *
+ * 设计模式：**单例 + 行为注入**
+ * - 布局里挂一次 `<VideoLightbox lang={...} />`，渲染出 backdrop + stage + close 的固定 DOM
+ * - 任何元素加 `data-video-lightbox` 属性即成为触发器；文档级事件委托捕获点击
+ * - 原地 FLIP 放大：Web Animations API 从触发器 rect 过渡到屏幕中心 16:9 卡
+ * - 稳定态尺寸（打开后）用 CSS 控制，`width: min(1200px, 92vw, calc(85vh * 16/9))` 自动响应 resize
+ *
+ * 触发器属性：
+ * - `data-video-lightbox`          必须；标记为触发器
+ * - `data-video-src="<url>"`       可选；未提供则从元素自身 / 子 <video>/<source> 读
+ * - `data-video-title="<text>"`    可选；设为 aria-label 前缀（"播放 XX 视频"）
+ */
+import Icon from "../icons/Icon.astro";
+import { type Lang, homeStrings } from "../../i18n/home";
+
+interface Props {
+  lang?: Lang;
+}
+const { lang = "zh" } = Astro.props;
+const t = homeStrings[lang].videoLightbox;
+---
+
+<div
+  class="vlb-root"
+  id="vlbRoot"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t.dialogLabel}
+  aria-hidden="true"
+>
+  <div class="vlb-backdrop" id="vlbBackdrop"></div>
+  <div class="vlb-stage" id="vlbStage">
+    <video class="vlb-video" id="vlbVideo" playsinline controls preload="auto"></video>
+  </div>
+  <button type="button" class="vlb-close" id="vlbClose" aria-label={t.closeLabel}>
+    <Icon name="x" size={22} strokeWidth={2.4} />
+  </button>
+</div>
+
+<style>
+  /* ============ 触发器通用样式（全局作用于任何 [data-video-lightbox]） ============ */
+  /* :where() 将特异性降到 0，确保消费者（例如 .video-clicker / .ft-clicker）的
+     position/cursor 自定义永远能覆盖。position: relative 是兜底，让 ::after 的
+     absolute 定位有参照；消费者若已 position: absolute/fixed 也不影响。 */
+  :global(:where([data-video-lightbox])) {
+    cursor: pointer;
+    position: relative;
+  }
+  /* hover / focus 时在视频上叠一层暗角 + 中心半透明圆形底，暗示 "可点击全屏观看"。
+     用 ::after 避免污染触发器自身 DOM；pointer-events: none 保证点击仍落到触发器。 */
+  :global([data-video-lightbox])::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      circle at center,
+      rgba(0, 0, 0, 0.28) 0%,
+      rgba(0, 0, 0, 0) 55%
+    );
+    opacity: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 继承触发器的圆角，防止暗角溢出卡片外 */
+    border-radius: inherit;
+  }
+  :global([data-video-lightbox]:hover)::after,
+  :global([data-video-lightbox]:focus-visible)::after {
+    opacity: 1;
+  }
+  :global([data-video-lightbox]:focus-visible) {
+    outline: 2px solid var(--landing-brand);
+    outline-offset: 3px;
+  }
+
+  /* Body scroll lock（lightbox 打开期间） */
+  :global(body[data-vlb-open]) {
+    overflow: hidden;
+  }
+
+  /* ============ Lightbox root ============ */
+  .vlb-root {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+  }
+  /* 打开 / 关闭过程中都显示；idle 态 display:none 彻底脱离 */
+  .vlb-root[data-state] {
+    display: block;
+  }
+
+  .vlb-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(16px) saturate(1.05);
+    -webkit-backdrop-filter: blur(16px) saturate(1.05);
+    opacity: 0;
+    transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: zoom-out;
+  }
+  .vlb-root[data-state="opening"] .vlb-backdrop,
+  .vlb-root[data-state="open"] .vlb-backdrop {
+    opacity: 1;
+  }
+
+  /* Stage：承载 video。开启过程中由 JS 设置 inline style 做 FLIP 动画；
+     动画结束后清空 inline style，切换到下面的稳定态 CSS，resize 响应由 CSS 自动完成。 */
+  .vlb-stage {
+    position: fixed;
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
+  }
+  .vlb-root[data-state="open"] .vlb-stage {
+    /* 三重 min：vw 占比 / 1200 硬顶 / 受高度约束反推的宽度（保证 aspect-ratio 不被 max-height 拉扁）*/
+    width: min(1200px, 92vw, calc(85vh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 16px;
+  }
+
+  .vlb-video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* 视频自身黑底，避免 controls 区域露出 stage 底色 */
+    background: #000;
+  }
+
+  /* ============ 关闭按钮：固定在 viewport 右上，独立于 stage ============ */
+  .vlb-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition:
+      opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 0.15s ease,
+      transform 0.15s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .vlb-root[data-state="open"] .vlb-close {
+    opacity: 1;
+  }
+  .vlb-close:hover {
+    background: rgba(255, 255, 255, 0.28);
+    transform: scale(1.06);
+  }
+  .vlb-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .vlb-root[data-state="open"] .vlb-stage {
+      width: min(96vw, calc(80vh * 16 / 9));
+      border-radius: 12px;
+    }
+    .vlb-close {
+      top: 12px;
+      right: 14px;
+      width: 38px;
+      height: 38px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vlb-backdrop,
+    .vlb-close {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  type VlbState = "opening" | "open" | "closing";
+
+  const root = document.getElementById("vlbRoot");
+  const backdrop = document.getElementById("vlbBackdrop");
+  const stage = document.getElementById("vlbStage");
+  const video = document.getElementById("vlbVideo") as HTMLVideoElement | null;
+  const closeBtn = document.getElementById("vlbClose");
+
+  // 任一节点缺失（例如该页面未挂载 VideoLightbox）直接不绑定 —— 触发器点击会 no-op
+  if (root && backdrop && stage && video && closeBtn) {
+    const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+    const DURATION = 320;
+    const MOBILE_BP = 768;
+
+    let currentAnimation: Animation | null = null;
+    let lastTrigger: HTMLElement | null = null;
+
+    function setState(next: VlbState | null) {
+      if (!root) return;
+      if (next) root.dataset.state = next;
+      else delete root.dataset.state;
+    }
+    function getState(): VlbState | null {
+      return (root?.dataset.state as VlbState | undefined) ?? null;
+    }
+
+    function resolveSrc(trigger: HTMLElement): string | null {
+      // 显式 data 属性最优先
+      const explicit = trigger.dataset.videoSrc;
+      if (explicit) return explicit;
+      // 触发器本身就是 <video>
+      if (trigger instanceof HTMLVideoElement) {
+        if (trigger.currentSrc) return trigger.currentSrc;
+        const source = trigger.querySelector<HTMLSourceElement>("source");
+        if (source?.src) return source.src;
+        return null;
+      }
+      // 触发器内嵌 <video> / <source>
+      const nestedVideo = trigger.querySelector<HTMLVideoElement>("video");
+      if (nestedVideo?.currentSrc) return nestedVideo.currentSrc;
+      const source = trigger.querySelector<HTMLSourceElement>("source");
+      if (source?.src) return source.src;
+      return null;
+    }
+
+    /** 计算稳定态 stage 矩形。和 CSS 的 `min(1200px, 92vw, calc(85vh * 16/9))` 算式等价。 */
+    function computeFinalRect() {
+      const viewW = window.innerWidth;
+      const viewH = window.innerHeight;
+      const isMobile = viewW <= MOBILE_BP;
+      const widthByViewport = isMobile ? viewW * 0.96 : Math.min(1200, viewW * 0.92);
+      const widthByHeight = ((isMobile ? viewH * 0.8 : viewH * 0.85) * 16) / 9;
+      const finalW = Math.min(widthByViewport, widthByHeight);
+      const finalH = (finalW * 9) / 16;
+      return {
+        left: (viewW - finalW) / 2,
+        top: (viewH - finalH) / 2,
+        width: finalW,
+        height: finalH,
+      };
+    }
+
+    function applyRect(rect: {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    }, radius: string) {
+      if (!stage) return;
+      stage.style.left = `${rect.left}px`;
+      stage.style.top = `${rect.top}px`;
+      stage.style.width = `${rect.width}px`;
+      stage.style.height = `${rect.height}px`;
+      stage.style.transform = "none";
+      stage.style.borderRadius = radius;
+    }
+
+    function open(trigger: HTMLElement) {
+      if (!root || !stage || !video) return;
+      const state = getState();
+      if (state === "opening" || state === "open") return;
+
+      const src = resolveSrc(trigger);
+      if (!src) return;
+
+      lastTrigger = trigger;
+      const fromRect = trigger.getBoundingClientRect();
+      const fromRadius = getComputedStyle(trigger).borderRadius || "0px";
+      const toRect = computeFinalRect();
+      const toRadius = window.innerWidth <= MOBILE_BP ? "12px" : "16px";
+
+      // 视频配置：模态里用完整原生 controls（拖进度 / 音量 / 全屏），取消循环，从头播带声
+      video.src = src;
+      video.muted = false;
+      video.loop = false;
+      video.currentTime = 0;
+
+      setState("opening");
+      root.setAttribute("aria-hidden", "false");
+      document.body.dataset.vlbOpen = "";
+
+      // 先贴到触发器位置（first 帧）
+      applyRect(fromRect, fromRadius);
+
+      currentAnimation?.cancel();
+      currentAnimation = stage.animate(
+        [
+          {
+            left: `${fromRect.left}px`,
+            top: `${fromRect.top}px`,
+            width: `${fromRect.width}px`,
+            height: `${fromRect.height}px`,
+            borderRadius: fromRadius,
+          },
+          {
+            left: `${toRect.left}px`,
+            top: `${toRect.top}px`,
+            width: `${toRect.width}px`,
+            height: `${toRect.height}px`,
+            borderRadius: toRadius,
+          },
+        ],
+        { duration: DURATION, easing: EASING, fill: "forwards" },
+      );
+
+      const animation = currentAnimation;
+      animation.onfinish = () => {
+        if (!stage || !video) return;
+        // 清掉 first 帧的 inline style；cancel 动画释放 fill:forwards 的末帧值，
+        // 让稳定态 CSS 接管（resize 自动响应）。三步顺序：state 切到 open 使 CSS 生效 →
+        // 移除 inline style → cancel 动画释放其末帧值。
+        setState("open");
+        stage.removeAttribute("style");
+        animation.cancel();
+        void video.play().catch(() => {});
+        closeBtn?.focus();
+      };
+    }
+
+    function close() {
+      if (!root || !stage || !video || !lastTrigger) return;
+      const state = getState();
+      if (state === null || state === "closing") return;
+
+      // 取当前 stage 的真实 rect 作为反向动画起点（兼容动画中途关闭）
+      const fromRect = stage.getBoundingClientRect();
+      const toRect = lastTrigger.getBoundingClientRect();
+      const fromRadius = window.innerWidth <= MOBILE_BP ? "12px" : "16px";
+      const toRadius = getComputedStyle(lastTrigger).borderRadius || "0px";
+
+      setState("closing");
+
+      // 把稳定态 CSS 的位置同步到 inline（动画起点）
+      applyRect(fromRect, fromRadius);
+
+      currentAnimation?.cancel();
+      currentAnimation = stage.animate(
+        [
+          {
+            left: `${fromRect.left}px`,
+            top: `${fromRect.top}px`,
+            width: `${fromRect.width}px`,
+            height: `${fromRect.height}px`,
+            borderRadius: fromRadius,
+          },
+          {
+            left: `${toRect.left}px`,
+            top: `${toRect.top}px`,
+            width: `${toRect.width}px`,
+            height: `${toRect.height}px`,
+            borderRadius: toRadius,
+          },
+        ],
+        { duration: DURATION, easing: EASING, fill: "forwards" },
+      );
+
+      const triggerToRefocus = lastTrigger;
+      const animation = currentAnimation;
+      animation.onfinish = () => {
+        if (!video || !root || !stage) return;
+        video.pause();
+        // 显式清 src 避免继续占带宽下载
+        video.removeAttribute("src");
+        video.load();
+        stage.removeAttribute("style");
+        animation.cancel();
+        setState(null);
+        root.setAttribute("aria-hidden", "true");
+        delete document.body.dataset.vlbOpen;
+        lastTrigger = null;
+        triggerToRefocus?.focus?.();
+      };
+    }
+
+    // ---- 事件委托：触发器点击 ----
+    document.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const trigger = target.closest<HTMLElement>("[data-video-lightbox]");
+      if (!trigger) return;
+      e.preventDefault();
+      open(trigger);
+    });
+
+    // ---- 键盘：Enter/Space 激活 focused 触发器；Escape 关闭 ----
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && getState() === "open") {
+        close();
+        return;
+      }
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const trigger = target.closest<HTMLElement>("[data-video-lightbox]");
+      if (!trigger || !trigger.matches("[data-video-lightbox]")) return;
+      // 原生 <button>/<a> 自带 Enter/Space → click 行为，避免重复开两次
+      if (trigger instanceof HTMLButtonElement || trigger instanceof HTMLAnchorElement) return;
+      e.preventDefault();
+      open(trigger);
+    });
+
+    closeBtn.addEventListener("click", close);
+    backdrop.addEventListener("click", close);
+  }
+</script>

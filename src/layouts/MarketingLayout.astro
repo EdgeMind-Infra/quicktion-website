@@ -11,6 +11,7 @@
  */
 import "../styles/global.css";
 import SiteNav from "../components/nav/SiteNav.astro";
+import VideoLightbox from "../components/media/VideoLightbox.astro";
 import { type Lang, homeStrings } from "../i18n/home";
 import { withBase } from "../lib/paths";
 
@@ -61,6 +62,9 @@ const faviconHref = withBase("/favicon.svg");
         <p class="footer-copy">{s.footer.copy}</p>
       </div>
     </footer>
+
+    {/* 单例视频灯箱：页面任意 `[data-video-lightbox]` 元素点击后打开 */}
+    <VideoLightbox lang={navLang} />
 
     <style is:global>
       *, *::before, *::after {

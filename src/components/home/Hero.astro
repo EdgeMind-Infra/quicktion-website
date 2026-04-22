@@ -32,7 +32,13 @@ const HERO_VIDEO_SRC =
         <Icon name="rocket" size={18} strokeWidth={2.2} />
         <span>{t.ctaPrimary}</span>
       </a>
-      <button class="btn-secondary" type="button" id="btnDemo">
+      <button
+        class="btn-secondary"
+        type="button"
+        id="btnDemo"
+        data-video-lightbox
+        data-video-src={HERO_VIDEO_SRC}
+      >
         <Icon name="play-circle" size={18} strokeWidth={2.2} />
         <span>{t.ctaSecondary}</span>
       </button>
@@ -47,6 +53,15 @@ const HERO_VIDEO_SRC =
       <video class="video-media" autoplay muted loop playsinline preload="metadata">
         <source src={HERO_VIDEO_SRC} type="video/mp4" />
       </video>
+      {/* 透明点击层：覆盖视频区域（不含顶部 titlebar），避免和 .video-sound 嵌套成双重 button。
+         DOM 顺序先于 .video-sound，按 DOM 层级自然落在音量按钮之下，不吞声控点击。 */}
+      <button
+        type="button"
+        class="video-clicker"
+        data-video-lightbox
+        data-video-src={HERO_VIDEO_SRC}
+        aria-label={t.ctaSecondary}
+      ></button>
       <button
         type="button"
         class="video-sound"
@@ -229,6 +244,27 @@ const HERO_VIDEO_SRC =
     display: block;
   }
 
+  /* 透明点击层：覆盖视频区域（顶部 titlebar 除外）。
+     DOM 先于 .video-sound，所以音量按钮天然叠在上面，点击不冲突。
+     点击后由全局 VideoLightbox 的 data-video-lightbox 委托处理。 */
+  .video-clicker {
+    position: absolute;
+    top: 44px; /* 对齐 .video-topbar 高度 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    /* cursor 由 VideoLightbox 全局 [data-video-lightbox] 规则统一给 */
+  }
+  .video-clicker:focus-visible {
+    /* outline 内陷，避免被 .hero-video 的 overflow: hidden 裁掉 */
+    outline: 2px solid var(--landing-brand);
+    outline-offset: -4px;
+    border-radius: 12px;
+  }
+
   /* 静音切换按钮：右下角胶囊，默认半透明，hover / 交互后加深。
      浏览器 autoplay 策略要求视频静音才能自动播，用户点击即可解除。 */
   .video-sound {
@@ -313,19 +349,22 @@ const HERO_VIDEO_SRC =
       width: 10px;
       height: 10px;
     }
+    .video-clicker {
+      /* 同步 topbar 到 mobile 的 36px */
+      top: 36px;
+    }
   }
 </style>
 
 <script>
-  const btnDemo = document.getElementById("btnDemo");
-  const heroVideo = document.getElementById("heroVideo");
-  btnDemo?.addEventListener("click", () => {
-    heroVideo?.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+  // btnDemo 和 heroVideo 卡的点击都被 VideoLightbox 的全局事件委托接管（data-video-lightbox）。
 
+  const heroVideo = document.getElementById("heroVideo");
   const soundBtn = document.getElementById("heroSound");
   const videoEl = heroVideo?.querySelector<HTMLVideoElement>(".video-media");
-  soundBtn?.addEventListener("click", () => {
+  soundBtn?.addEventListener("click", (e) => {
+    // 阻止冒泡到 .hero-video 的 data-video-lightbox —— 静音切换不该打开灯箱
+    e.stopPropagation();
     if (!videoEl) return;
     const nextMuted = !videoEl.muted;
     videoEl.muted = nextMuted;

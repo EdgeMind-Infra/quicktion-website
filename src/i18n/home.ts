@@ -76,6 +76,14 @@ export interface HomeStrings {
   footer: {
     copy: string;
   };
+  videoLightbox: {
+    /** aria-label: dialog（role="dialog"）的无障碍名称 */
+    dialogLabel: string;
+    /** aria-label: 关闭按钮 */
+    closeLabel: string;
+    /** aria-label: 可点击视频触发器的默认名称（各触发器可用 data-video-title 覆盖） */
+    triggerLabel: string;
+  };
 }
 
 const zh: HomeStrings = {
@@ -228,6 +236,11 @@ const zh: HomeStrings = {
   },
   footer: {
     copy: "© 2026 巨象科技 · 保留所有权利",
+  },
+  videoLightbox: {
+    dialogLabel: "视频播放",
+    closeLabel: "关闭视频",
+    triggerLabel: "播放视频",
   },
 };
 
@@ -398,6 +411,11 @@ const en: HomeStrings = {
   },
   footer: {
     copy: "© 2026 Quicktion · All rights reserved",
+  },
+  videoLightbox: {
+    dialogLabel: "Video player",
+    closeLabel: "Close video",
+    triggerLabel: "Play video",
   },
 };
 
