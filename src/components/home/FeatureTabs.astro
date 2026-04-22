@@ -10,10 +10,15 @@ const t = homeStrings[lang].featureTabs;
 
 const tabVideos: Record<string, string | null> = {
   chat: withBase("/videos/chat.mp4"),
-  multi: null, // TODO(feature-tabs): 录制多店铺管理演示后补 public/videos/multi.mp4
+  multi: null, // TODO(feature-tabs): 录制多店铺管理演示后补 public/videos/multi.mp4；当前先用静态图占位
   schedule: withBase("/videos/schedule.mp4"),
   im: withBase("/videos/im.mp4"),
   browser: withBase("/videos/browser.mp4"),
+};
+
+// 尚无视频时可用静态图占位。video 优先级高于 image，两者都缺才回落到文字 placeholder。
+const tabImages: Record<string, string | null> = {
+  multi: withBase("/images/multistore.png"),
 };
 ---
 
@@ -39,18 +44,21 @@ const tabVideos: Record<string, string | null> = {
     {
       t.features.map((f, i) => {
         const video = tabVideos[f.key];
+        const image = !video ? tabImages[f.key] : null;
         return (
           <div class:list={["ft-panel", i === 0 ? "active" : ""]} id={`ftab-${f.key}`}>
             <div class="ft-left">
               <h3 class="ft-feature-title">{f.title}</h3>
               <p class="ft-feature-desc">{f.desc}</p>
             </div>
-            <div class:list={["ft-right", video ? "has-video" : ""]}>
+            <div class:list={["ft-right", video && "has-video", image && "has-image"]}>
               {video ? (
                 /* preload="none" 避免 4 个视频同时抢带宽；activate() 会切到 metadata 并 play 激活 tab */
                 <video muted loop playsinline preload="none" class="ft-video">
                   <source src={video} type="video/mp4" />
                 </video>
+              ) : image ? (
+                <img src={image} alt={f.title} class="ft-image" loading="lazy" />
               ) : (
                 <div class="ft-placeholder">{f.placeholder}</div>
               )}
@@ -162,10 +170,20 @@ const tabVideos: Record<string, string | null> = {
     background: #000;
     border: none;
   }
+  /* 图片槽位：保留淡橙主题底色作为 contain 时的留边，和外框呼应 */
+  .ft-right.has-image {
+    padding: 0;
+  }
   .ft-video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+  }
+  .ft-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     display: block;
   }
   .ft-placeholder {
